@@ -15,9 +15,28 @@ from time import time
 import numpy as np
 import loguru
 from loguru import logger
+import Burnwire as bw
+
+burnwire_time_alloc = 20 # mins
+
+def SysDiagnostic():
+    pass
+
+def reboot():
+    pass
 
 def main():
-    pass
+    start_time = initializeSystem()
+    SysDiagnostic()
+    if not Burnwire.burnwire() or (time()-start_time < burnwire_time_alloc*60):
+        Burnwire.burnwire()
+
+        # TODO: need way of checking the photodiode in this process before
+        # ensuring that the flag is set to true; run as parallel process?
+    if not SysDiagnostic(): 
+        reboot()
+    else    
+        runScience()
 
 
 
