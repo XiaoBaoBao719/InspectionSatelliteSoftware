@@ -136,9 +136,9 @@ def serialSetup():
     """
     SCIENCE = True
     # Initialize Serial Port
-    ser = serial.Serial(port=SERIAL_PORT, baudrate=BAUDRATE,parity=Serial.PARITY_EVEN,
-                            timeout=SYS_TIMEOUT,stopbits=serial.STOPBITS_ONE,
-                            bytesize=serial.EIGHTBITS)
+    ser = serial.Serial(port=SERIAL_PORT, baudrate=BAUDRATE,
+                        parity=Serial.PARITY_ODD,timeout=SYS_TIMEOUT,
+                        stopbits=serial.STOPBITS_ONE,bytesize=serial.EIGHTBITS)
     counter = 0
     print(ser.name)
     ser.write(b'CV_Payload_Active')
