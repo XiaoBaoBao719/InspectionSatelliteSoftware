@@ -35,8 +35,6 @@ def main():
         # ensuring that the flag is set to true; run as parallel process?
     if not SysDiagnostic(): 
         reboot()
-    else    
-        runScience()
 
 
 
