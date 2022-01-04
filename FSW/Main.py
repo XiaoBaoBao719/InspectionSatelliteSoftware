@@ -137,7 +137,7 @@ def serialSetup():
     SCIENCE = True
     # Initialize Serial Port
     ser = serial.Serial(port=SERIAL_PORT, baudrate=BAUDRATE,
-                        parity=Serial.PARITY_ODD,timeout=SYS_TIMEOUT,
+                        parity=serial.PARITY_ODD,timeout=SYS_TIMEOUT,
                         stopbits=serial.STOPBITS_ONE,bytesize=serial.EIGHTBITS)
     counter = 0
     print(ser.name)
@@ -198,9 +198,19 @@ def reboot():
     system('sudo restart')
     pass
 
-def performInference():
-    """
-    TODO: call the CamTest.sh bash script for each CV model and change lighting conditions
+def performInference(model):
+    """ Calls CV models one after another, ensuring that light and dark lighting
+        conditons are also created for each CV model
+
+    Arguments
+    ---------
+    model: string 
+        input argument that tells function which CV model to invoke
+
+    Returns
+    --------
+    resultsDF: string
+        Filepath to dataframe of output results
     """
     pass
     
@@ -287,8 +297,12 @@ def main():
     """ Main loop
     """
     setup()
+
+    print(timer)
+
     while True:
-        results = doScience()
+        """ Performs an inference every six minutes """
+        results = performInference()
         writePayloadData(results)
         #TODO: must be able to read from Rx and implement parity bit outcome
         pass
