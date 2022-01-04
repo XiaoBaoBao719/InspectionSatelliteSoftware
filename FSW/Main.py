@@ -153,14 +153,10 @@ def camLightOff():
 
 def serialSetup():
     """ 
-        
     Parameters
     ----------
-    val: 
-    
-    Returns
-    ---------
-    
+    ser: Serial
+        Serial object handles UART comms protocol with S/C
     """
     SCIENCE = True
     # Initialize Serial Port
@@ -250,15 +246,15 @@ def performInference(model, source):
         Filepath to dataframe of output results
     """
     camLightOn()
-    DetectronResultsLit = DetectronPredictor.detect(source)
-    YoloResultsLit = YoloPredictor
+    detectron_results_lit = DetectronPredictor.detect(source)
+    yolo_results_lit = YoloPredictor.detect(source)
 
     camLightOff()
-    DetectronResultsDark = DetectronPredictor.detect(source)
-    YoloResultsDark = YoloPredictor
+    detectron_results_dark = DetectronPredictor.detect(source)
+    yolo_results_dark = YoloPredictor.detect(source)
 
-    return [{'Light': (DetectronResultsLit, YoloResultsLit)} ,
-            {'Dark':(DetectronResultsDark, YoloResultsDark)}]
+    return [{'Light': (detectron_results_lit, yolo_results_lit)} ,
+            {'Dark':(detectron_results_dark, yolo_results_dark)}]
     
     
 def writePayloadData(results):
