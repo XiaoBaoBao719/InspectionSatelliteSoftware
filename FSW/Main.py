@@ -19,7 +19,7 @@ Primary functions include:
 from os import *
 from time import time
 from loguru import RotationFunction, logger
-from pathlib import Path
+from pathlib import Path, WindowsPath
 
 import numpy as np
 import math
@@ -64,6 +64,11 @@ Detectron2_WEIGHTS = ROOT / 'detmodel.pt'
 Detectron2_SOURCE = ROOT / 'data/images'
 YOLO_WEIGHTS = ROOT / 'yolov5s.pt'
 YOLO_SOURCE = ROOT / 'data/images'
+
+EXPOSURE_TIME = 1 # ms
+DELAY = 1 # ms
+WIDTH = 800 # px
+HEIGHT = 600 # px
 
 # =====================================
 # ==        MISC GLOBAL VARS         ==
@@ -129,13 +134,21 @@ def fireBurnwire():
     pass
     """
     # Immediately perform burnwire deploy for 5 seconds
-    GPIO.output(burnChanList, GPIO.HIGH)
-    prtStatus = GPIO.output(burnChanList, not GPIO.input(burnChanList))
+    GPIO.output(BURNWIRE_PINS, GPIO.HIGH)
+    prtStatus = GPIO.output(BURNWIRE_PINS, not GPIO.input(BURNWIRE_PINS))
     time.sleep(5) # Wait 5 seconds
     # Shutdown burnwire!
-    GPIO.output(burnChanList, GPIO.LOW)
-    prtStatus += GPIO.output(burnChanList, not GPIO.input(burnChanList)) # Report to sys diagnostic
+    GPIO.output(BURNWIRE_PINS, GPIO.LOW)
+    prtStatus += GPIO.output(BURNWIRE_PINS, not GPIO.input(BURNWIRE_PINS)) # Report to sys diagnostic
     time.sleep(10) # Wait 10 seconds
+    pass
+
+def camLightOn():
+    GPIO.output(LED_PIN, GPIO.HIGH)
+    pass
+
+def camLightOff():
+    GPIO.output(LED_PIN, GPIO.LOW)
     pass
 
 def serialSetup():
@@ -222,7 +235,8 @@ def takePicture(exposureTime, delay, width, height):
 def performInference(model, source):
     """ Calls CV models one after another, ensuring that light and dark lighting
         conditons are also created for each CV model
-
+    TODO: Need to determine fault handling for if a model fails to perform successful inference
+          i.e. memory leaks or failed inference.
     Arguments
     ---------
     model: string 
@@ -235,10 +249,11 @@ def performInference(model, source):
     resultsDF: string
         Filepath to dataframe of output results
     """
+    camLightOn()
     DetectronResultsLit = DetectronPredictor.detect(source)
     YoloResultsLit = YoloPredictor
-    
 
+    camLightOff()
     DetectronResultsDark = DetectronPredictor.detect(source)
     YoloResultsDark = YoloPredictor
 
@@ -287,6 +302,7 @@ def writePayloadData(results):
             ser.reset_input_buffer()
             ser.reset_output_buffer()
             serialSetup()
+
         bytesInBuffer = ser.in_waiting()
         print(bytesInBuffer)
         print(ser.out_waiting())
@@ -331,9 +347,10 @@ def main():
 
     print(timer)
 
-    while True:
+    while timer % timeInterval != 0:
         """ Performs an inference every six minutes """
-        results = performInference()
+        imgPath = takePicture(EXPOSURE_TIME, DELAY, WIDTH, HEIGHT)
+        results = performInference(imgPath)
         writePayloadData(results)
         #TODO: must be able to read from Rx and implement parity bit outcome
         pass
