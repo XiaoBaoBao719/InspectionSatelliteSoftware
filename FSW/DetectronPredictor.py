@@ -71,6 +71,34 @@ def get_handrail_dicts(img_dir):
         dataset_dicts.append(record)
     return dataset_dicts
 
+def detect(filename):
+    test_data = [{'file_name': filename}]
+
+    #inputPath = '/home/pi/HandrailData/observations/handrail-input.jpg'
+    #samplePath = '/home/pi/Mask_Handrail/input1.jpg'
+
+    #test_data = [{'file_name': samplePath
+    #            }]
+
+    im = cv2.imread(test_data[0]["file_name"])
+    outputs = predictor(im)
+    v = Visualizer(im[:, :, ::-1],
+                    metadata=handrail_metadata, 
+                    scale=0.5, 
+                        # remove the colors of unsegmented pixels. This option is only available for segmentation models
+        )
+    out = v.draw_instance_predictions(outputs["instances"].to("cpu"))
+
+    img_out = out.get_image()[:, :, ::-1]
+    imS = cv2.resize(img_out, (800, 600))
+    cv2.imshow('',imS)
+
+    cv2.imwrite('/home/pi/handrail-output.jpg', imS)
+    cv2.waitKey(0) == 27
+
+    print("Returns DATAFRAME")
+
+
 # Iterate through dictionary of ground truths and labels
 for d in ["train", "val"]:
     DatasetCatalog.register("handrail_" + d, lambda d=d: get_handrail_dicts("handrail5/" + d))  #.# folder specific
@@ -97,24 +125,6 @@ cfg.MODEL.ROI_HEADS.NUM_CLASSES = 3  # only has one class (ballon). (see https:/
 cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5 # Set threshold for this model
 predictor = DefaultPredictor(cfg)
 
-inputPath = '/home/pi/HandrailData/observations/handrail-input.jpg'
-samplePath = '/home/pi/Mask_Handrail/input1.jpg'
 
-test_data = [{'file_name': samplePath
-              }]
-
-im = cv2.imread(test_data[0]["file_name"])
-outputs = predictor(im)
-v = Visualizer(im[:, :, ::-1],
-                   metadata=handrail_metadata, 
-                   scale=0.5, 
-                      # remove the colors of unsegmented pixels. This option is only available for segmentation models
-    )
-out = v.draw_instance_predictions(outputs["instances"].to("cpu"))
-
-img_out = out.get_image()[:, :, ::-1]
-imS = cv2.resize(img_out, (800, 600))
-cv2.imshow('',imS)
-
-cv2.imwrite('/home/pi/handrail-output.jpg', imS)
-cv2.waitKey(0) == 27
+if __name__ == "__main__":
+    pass

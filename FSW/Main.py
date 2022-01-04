@@ -18,7 +18,8 @@ Primary functions include:
 
 from os import *
 from time import time
-from loguru import logger
+from loguru import RotationFunction, logger
+from pathlib import Path
 
 import numpy as np
 import math
@@ -27,6 +28,9 @@ import loguru
 import RPi.GPIO as GPIO
 import serial
 import threading
+
+import DetectronPredictor
+import YoloPredictor
 
 # =====================================
 # ==         DEPLOYMENT VARS         ==
@@ -49,6 +53,17 @@ mini_UART = '/dev/ttyS0'
 PL011 = '/dev/ttyAMA0'
 SERIAL_PORT = PL011
 ser = serial.Serial()
+
+# =====================================
+# ==           CV VARS               ==
+# =====================================
+FILE = Path(__file__).resolve()
+ROOT = FILE.parents[0]  # YOLOv5 root directory
+
+Detectron2_WEIGHTS = ROOT / 'detmodel.pt'
+Detectron2_SOURCE = ROOT / 'data/images'
+YOLO_WEIGHTS = ROOT / 'yolov5s.pt'
+YOLO_SOURCE = ROOT / 'data/images'
 
 # =====================================
 # ==        MISC GLOBAL VARS         ==
@@ -198,7 +213,13 @@ def reboot():
     system('sudo restart')
     pass
 
-def performInference(model):
+def takePicture(exposureTime, delay, width, height):
+    """TODO: Perform cam connection check, lighting check"""
+    system('libcamera-jpeg -o handrail-input.jpg -t 5000 --width 800 --height 600')
+    pass
+
+
+def performInference(model, source):
     """ Calls CV models one after another, ensuring that light and dark lighting
         conditons are also created for each CV model
 
@@ -206,13 +227,24 @@ def performInference(model):
     ---------
     model: string 
         input argument that tells function which CV model to invoke
+    source: string
+        File path to the image that we want to perform inference on
 
     Returns
     --------
     resultsDF: string
         Filepath to dataframe of output results
     """
-    pass
+    DetectronResultsLit = DetectronPredictor.detect(source)
+    YoloResultsLit = YoloPredictor
+    
+
+    DetectronResultsDark = DetectronPredictor.detect(source)
+    YoloResultsDark = YoloPredictor
+
+    return [{'Light': (DetectronResultsLit, YoloResultsLit)} ,
+            {'Dark':(DetectronResultsDark, YoloResultsDark)}]
+    
     
 def writePayloadData(results):
     """ Takes CV inference results from the model and writes the data to the S/C FC
@@ -249,7 +281,6 @@ def writePayloadData(results):
     while True:
         try:
             ser.write(b'Writing CV results: \n'%(results))
-
         except (serial.SerialTimeoutException):
             # Reset the buffer and reset the serial conection
             print("Serial Timed out! Re-attempting connection...")
