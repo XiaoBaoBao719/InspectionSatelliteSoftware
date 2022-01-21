@@ -28,6 +28,7 @@ import loguru
 import RPi.GPIO as GPIO
 import serial
 import threading
+import scled
 
 from DetectronPredictor import *
 from YoloPredictor import run
