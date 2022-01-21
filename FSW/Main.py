@@ -28,7 +28,7 @@ import RPi.GPIO as GPIO
 import serial
 import threading
 
-import Burnwire as bw
+import Burnwire
 import DriverLED as led
 
 from DetectronPredictor import *
@@ -108,43 +108,43 @@ def initializeComputer():
     """ Setup calls to RPi.GPIO to initialize pin numbers to board specs and starts
         the experiment timer
     """
-    GPIO.setmode(GPIO.BOARD)
+    GPIO.setmode(GPIO.BCM)
     GPIO.setwarnings(False)
-    GPIO.setup(LED_PIN, GPIO.OUT)
+    #GPIO.setup(LED_PIN, GPIO.OUT)
     startTimer()
-        
-def initializeBurnwire():
-    """ Setup calls to RPi.GPIO to initialize pin numbers to board specs and assigns
-        photodiode to a pulldown resistor
-    """
-    GPIO.setup(BURN_PIN_1, GPIO.OUT, initial = GPIO.LOW)
-    GPIO.setup(BURN_PIN_2, GPIO.OUT, initial = GPIO.LOW)
-    GPIO.setup(INPUT_PIN, GPIO.IN)
-    GPIO.setup(PHOTODIODE_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-    GPIO.cleanup()
     
-def fireBurnwire():
-    """ Calls GPIO pins in order to run current through burn resistor and
-        trigger the release mechanism
-        
-    Parameters
-    ----------
-    val: float
-        Contains the digital photodiode readings
+# def initializeBurnwire():
+#     """ Setup calls to RPi.GPIO to initialize pin numbers to board specs and assigns
+#         photodiode to a pulldown resistor
+#     """
+#     GPIO.setup(BURN_PIN_1, GPIO.OUT, initial = GPIO.LOW)
+#     GPIO.setup(BURN_PIN_2, GPIO.OUT, initial = GPIO.LOW)
+#     GPIO.setup(INPUT_PIN, GPIO.IN)
+#     GPIO.setup(PHOTODIODE_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+#     GPIO.cleanup()
     
-    Returns
-    ---------
-    pass
-    """
-    # Immediately perform burnwire deploy for 5 seconds
-    GPIO.output(BURNWIRE_PINS, GPIO.HIGH)
-    prtStatus = GPIO.output(BURNWIRE_PINS, not GPIO.input(BURNWIRE_PINS))
-    time.sleep(5) # Wait 5 seconds
-    # Shutdown burnwire!
-    GPIO.output(BURNWIRE_PINS, GPIO.LOW)
-    prtStatus += GPIO.output(BURNWIRE_PINS, not GPIO.input(BURNWIRE_PINS)) # Report to sys diagnostic
-    time.sleep(10) # Wait 10 seconds
-    pass
+# def fireBurnwire():
+#     """ Calls GPIO pins in order to run current through burn resistor and
+#         trigger the release mechanism
+        
+#     Parameters
+#     ----------
+#     val: float
+#         Contains the digital photodiode readings
+    
+#     Returns
+#     ---------
+#     pass
+#     """
+#     # Immediately perform burnwire deploy for 5 seconds
+#     GPIO.output(BURNWIRE_PINS, GPIO.HIGH)
+#     prtStatus = GPIO.output(BURNWIRE_PINS, not GPIO.input(BURNWIRE_PINS))
+#     time.sleep(5) # Wait 5 seconds
+#     # Shutdown burnwire!
+#     GPIO.output(BURNWIRE_PINS, GPIO.LOW)
+#     prtStatus += GPIO.output(BURNWIRE_PINS, not GPIO.input(BURNWIRE_PINS)) # Report to sys diagnostic
+#     time.sleep(10) # Wait 10 seconds
+#     pass
 
 def camLightOn():
     GPIO.output(LED_PIN, GPIO.HIGH)
@@ -323,9 +323,9 @@ def setup():
     ----------
     val: 
     """
-    initializeComputer()
+    #initializeComputer()
     serialSetup()
-    initializeBurnwire()
+    #initializeBurnwire()
     
     while not checkDeployed():
             prtStatus += "Burnwire not deployed, trying again"
