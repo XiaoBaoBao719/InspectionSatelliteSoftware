@@ -10,7 +10,7 @@ PD_POS = 20 # Photodiode GPIO20
 BURN_POS_1 = 12 # GPIO12
 BURN_POS_2 = 13 # GPIO13
 
-BURN_CHANNELS = {'channel_1':BURN_PIN_1, 'channel_2':BURN_PIN_2}
+BURN_CHANNELS = {'channel_1':BURN_POS_1, 'channel_2':BURN_POS_2}
 
 class Burnwire:
     
@@ -61,7 +61,6 @@ class Burnwire:
         self.duty_cycle = duty_cycle
         
         # Starts the burn!
-        
         if '1' in burn_num:
             self.burn_pwm_1.ChangeFrequency(self.freq)
             self.burn_pwm_1.ChangeDutyCycle(self.duty_cycle)
@@ -72,7 +71,7 @@ class Burnwire:
             return False
         
         # Hold burn for duration
-        time.sleep(duration)
+        sleep(duration)
         
         # Cease burn and cleanup
         GPIO.output(BURN_CHANNELS, GPIO.LOW)
@@ -80,7 +79,6 @@ class Burnwire:
         self.burn_pwm_2.ChangeDutyCycle(0)
         self.destroy()
         
-        return True
         # Immediately perform burnwire deploy for 5 seconds
         #GPIO.output(BURNWIRE_PINS, GPIO.HIGH)
         #prtStatus = GPIO.output(BURNWIRE_PINS, not GPIO.input(BURNWIRE_PINS))
@@ -90,6 +88,7 @@ class Burnwire:
         #prtStatus += GPIO.output(BURNWIRE_PINS, not GPIO.input(BURNWIRE_PINS)) # Report to sys diagnostic
         #time.sleep(10) # Wait 10 seconds
         #pass
+        return True
     
     def destroy(self):
         self.burn_pwm_1.stop()

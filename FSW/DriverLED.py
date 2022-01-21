@@ -1,15 +1,19 @@
 from os import *
-from gpiozero import LED
+#from gpiozero import LED
 from time import sleep
 import RPi.GPIO as GPIO
 import threading
+
+# =====================================
+# ==         GLOBAL VARS         ==
+# =====================================
+WHITE_LED_PIN = 0 # GPIO 
+RGB_PINS = 0 # GPIO
 
 class DriverLED:
     """
     Driver for the S/C LEDs on the flight board.
     """
-    WHITE_LED_PIN = 0
-    RGB_PINS = 0
     board = ""
     
     def __init__(self, boardType):
@@ -18,7 +22,10 @@ class DriverLED:
         print("Board type set to: ", boardType)
         self.initializeLEDs()
         
-    def setBoard():
+    def setBoard(self):
+        """TODO: Change this function because it doesn't make sense
+                having global constants be mutable.
+        """
         if self.board == "RPI4":
             WHITE_LED_PIN = 17
             RGB_PINS = [2, 3, 4]
@@ -27,12 +34,12 @@ class DriverLED:
             WHITE_LED_PIN = 18
             RGB_PINS = 1
             
-    def initializeLEDs():
+    def initializeLEDs(self):
         GPIO.setup(GPIO.BCM)
         GPIO.setwarnings(False)
         GPIO.setup(WHITE_LED_PIN, GPIO.OUT)
         GPIO.setup(RGB_PINS, GPIO.OUT)
-        blink(5)
+        self.blink(5)
         
     def blink(numBlinks):
         for i in range(numBlinks):
