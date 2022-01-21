@@ -29,8 +29,9 @@ import RPi.GPIO as GPIO
 import serial
 import threading
 
-import DetectronPredictor
-import YoloPredictor
+from DetectronPredictor import *
+from YoloPredictor import run
+
 
 # =====================================
 # ==         DEPLOYMENT VARS         ==

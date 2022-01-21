@@ -35,3 +35,7 @@ if burnwireNotDeployed():
 
 
 GPIO.cleanup()
+
+def say_hello():
+    print("Hi")
+    pass
