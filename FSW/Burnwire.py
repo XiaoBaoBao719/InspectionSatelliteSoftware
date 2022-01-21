@@ -5,7 +5,7 @@ import RPi.GPIO as GPIO
 # =====================================
 # ==         GLOBAL VARS         ==
 # =====================================
-PD_POS = 20 # Photodiode GPIO20
+#PD_POS = 20 # Photodiode GPIO20
 #INPUT_PIN = 10
 BURN_POS_1 = 12 # GPIO12
 BURN_POS_2 = 13 # GPIO13
@@ -27,7 +27,7 @@ class Burnwire:
         GPIO.setwarnings(False)
         GPIO.setup(BURN_CHANNELS, GPIO.OUT)
         GPIO.output(BURN_CHANNELS, GPIO.LOW)
-        GPIO.input(PD_POS, GPIO.IN)
+        #GPIO.input(PD_POS, GPIO.IN)
         
         self.freq = init_freq
         self.duty_cycle = init_duty_cycle

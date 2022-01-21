@@ -23,12 +23,13 @@ from pathlib import Path, WindowsPath
 
 import numpy as np
 import math
-import loguru
-#import Burnwire as bw
+#import loguru
 import RPi.GPIO as GPIO
 import serial
 import threading
-import scled
+
+import Burnwire as bw
+import DriverLED as led
 
 from DetectronPredictor import *
 from YoloPredictor import run
@@ -37,12 +38,12 @@ from YoloPredictor import run
 # =====================================
 # ==         DEPLOYMENT VARS         ==
 # =====================================
-PHOTODIODE_PIN = 9
-INPUT_PIN = 10
-BURN_PIN_1 = 11
-BURN_PIN_2 = 12
-LED_PIN = 14
-BURNWIRE_PINS = (BURN_PIN_1, BURN_PIN_2)
+PD_POS = 9 # Photodiode GPIO20
+#INPUT_PIN = 10
+#BURN_PIN_1 = 11
+#BURN_PIN_2 = 12
+#LED_PIN = 14
+#BURNWIRE_PINS = (BURN_PIN_1, BURN_PIN_2)
 BURNWIRE_WAIT_TIME = 20 # mins
 LUMINOSITY_THRESHOLD = 1
 
