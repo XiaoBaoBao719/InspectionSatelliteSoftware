@@ -30,6 +30,7 @@ import threading
 
 import Burnwire
 import DriverLED as led
+import Camera as cam
 
 from DetectronPredictor import *
 from YoloPredictor import run
