@@ -319,7 +319,7 @@ def writePayloadData(results):
 
 def setup():
     """ Performs initial bootup sequence once and deploys the payload mechanism
-        
+        Checks status of components by writing to a text doc
     Parameters
     ----------
     val: 

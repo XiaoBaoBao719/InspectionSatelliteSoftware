@@ -18,12 +18,12 @@ class SCLED:
         
     def setBoard(board):
         if board == "RPI4":
-            WHITE_LED_PIN = 17
-            RGB_PINS = [2, 3, 4]
+            self.WHITE_LED_PIN = 17
+            selfRGB_PINS = [2, 3, 4]
 
         elif board == "CM4:
-            WHITE_LED_PIN = 18
-            RGB_PINS = 1
+            self.WHITE_LED_PIN = 18
+            self.RGB_PINS = 1
             
     def initializeLEDs():
         GPIO.setup(GPIO.BCM)
