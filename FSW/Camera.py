@@ -5,7 +5,7 @@ from pathlib import Path, WindowsPath
 
 import serial
 import threading
-#import DriverLED
+import DriverLED
 
 # =====================================
 # ==         GLOBAL VARS         ==
