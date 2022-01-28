@@ -1,0 +1,5 @@
+bootCounter=0
+deployedFlag=False
+burnwireFired=False
+darkCounter=0
+time=0

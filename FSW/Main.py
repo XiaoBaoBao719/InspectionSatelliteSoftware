@@ -79,6 +79,11 @@ HEIGHT = 600 # px
 # =====================================
 SCIENCE = False
 MAX_TEMP = 85 # measured in degrees C (see datasheet -20C - +85C)
+current_time = 0
+parameterDB_path_name = '\home\pi\Desktop\ParameterDB'
+init_file = ""
+deployed = False
+burnwireFired = False
 
 
 def startTimer():
@@ -113,39 +118,6 @@ def initializeComputer():
     GPIO.setwarnings(False)
     #GPIO.setup(LED_PIN, GPIO.OUT)
     startTimer()
-    
-# def initializeBurnwire():
-#     """ Setup calls to RPi.GPIO to initialize pin numbers to board specs and assigns
-#         photodiode to a pulldown resistor
-#     """
-#     GPIO.setup(BURN_PIN_1, GPIO.OUT, initial = GPIO.LOW)
-#     GPIO.setup(BURN_PIN_2, GPIO.OUT, initial = GPIO.LOW)
-#     GPIO.setup(INPUT_PIN, GPIO.IN)
-#     GPIO.setup(PHOTODIODE_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-#     GPIO.cleanup()
-    
-# def fireBurnwire():
-#     """ Calls GPIO pins in order to run current through burn resistor and
-#         trigger the release mechanism
-        
-#     Parameters
-#     ----------
-#     val: float
-#         Contains the digital photodiode readings
-    
-#     Returns
-#     ---------
-#     pass
-#     """
-#     # Immediately perform burnwire deploy for 5 seconds
-#     GPIO.output(BURNWIRE_PINS, GPIO.HIGH)
-#     prtStatus = GPIO.output(BURNWIRE_PINS, not GPIO.input(BURNWIRE_PINS))
-#     time.sleep(5) # Wait 5 seconds
-#     # Shutdown burnwire!
-#     GPIO.output(BURNWIRE_PINS, GPIO.LOW)
-#     prtStatus += GPIO.output(BURNWIRE_PINS, not GPIO.input(BURNWIRE_PINS)) # Report to sys diagnostic
-#     time.sleep(10) # Wait 10 seconds
-#     pass
 
 def camLightOn():
     GPIO.output(LED_PIN, GPIO.HIGH)
@@ -317,7 +289,7 @@ def writePayloadData(results):
     ser.flush()
     return packetStatus
 
-def setup():
+def setup(self):
     """ Performs initial bootup sequence once and deploys the payload mechanism
         Checks status of components by writing to a text doc
     Parameters
@@ -325,20 +297,90 @@ def setup():
     val: 
     """
     #initializeComputer()
-    serialSetup()
+    #serialSetup()
     #initializeBurnwire()
     
-    while not checkDeployed():
-            prtStatus += "Burnwire not deployed, trying again"
-            fireBurnwire()
-            # If not deployed, wait 20 minutes
-            if not checkDeployed():
-                time.sleep(BURNWIRE_WAIT_TIME*1000)
+    # try-catch guarentees that the file is properly closed even when an exception is raised
+    # that could prevent us from closing the file
+    try:
+        self.init_file = open(parameterDB_path_name,mode='w',encoding='utf-8')
+        # Increment Boot Counter
+        # Search file for 'bootCounter'
+        while(True):
+            current_line = self.init_file.readline()
+            if 'bootCounter' in current_line:
+                print(self.init_file.tell())
+                counter = int(filter(str.isdigit, current_line))
+                counter += 1
+                self.init_file.seek(-3, self.init_file.tell())
+                self.init_file.write(str(counter))
+                break
+            elif current_line is '':
+                break
+    finally:
+        self.init_file.close()
+    # Check the deploy flag on init file
+
+    try:
+        self.init_file = open(parameterDB_path_name,mode='r',encoding='utf-8')
+        # Search file for 'deployedFlag'
+        while(True):
+            current_line = self.init_file.readline()
+            if 'deployedFlag' in current_line:
+                if 'False' in current_line:
+                    print(self.init_file.tell())
+                    print("Deployed Flag is False")
+                    self.deployed = False
+                    break
+                elif 'True' in current_line:
+                    print(self.init_file.tell())
+                    print("Deployed Flag is True")
+                    self.deployed = True
+                    break
+            elif current_line is '':
+                break
+    finally:
+        self.init_file.close()
+    
+    if self.deployed is False:
+        # Fire the Burnwire
+        burnwire = Burnwire(2, 5000, 0)
+        burnwire.getBurnwireStatus()
+        burnwire.burn()
+        burnwire.destroy()
+
+        # Set burnwireFired to true
+        try:
+            self.init_file = open(parameterDB_path_name,mode='w',encoding='utf-8')
+            # Search file for 'deployedFlag'
+            while(True):
+                current_line = self.init_file.readline()
+                if 'burnwireFired' in current_line:
+                    if 'False' in current_line:
+                        print(self.init_file.tell())
+                        print("Burnwire Flag was False") #TODO: Need a better way of doing this
+                        self.init_file.write(str.replace('False','True'))
+                        self.burnwireFired = True
+                        break
+                    elif 'True' in current_line:
+                        print(self.init_file.tell())
+                        print("Burnwire Flag was True")
+                        self.deployed = True
+                        break
+                elif current_line is '':
+                    break
+        finally:
+         self.init_file.close()
+
+    else:
+        # Initialize and define the systems
+        pass
                 
     if not verifySystem():
         reboot()
-    else:
-        pass
+
+    pass
+
 
 def main():
     """ Main loop
