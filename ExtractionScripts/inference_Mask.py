@@ -15,6 +15,7 @@ Last Edited: 1/29/22
 WARNING: currently using stand-ins for captured image and CNN model.pth
 """
 
+
 # imports
 """ [NEEDS DEPENDENCIES SATISFIED --> @XB]
 import cv2
@@ -22,19 +23,26 @@ import cv2
 """
 
 
-""" [UNCOMMENT AFTER ADDING DEPENDENCIES]
-# load pre-trained Mask R-CNN model (based on colab work)
-cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, "dmyModle.pth")  # path to the model we just trained
-
-# inference the image (based on colab work)
-
-cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5   # set a custom testing threshold
-predictor = DefaultPredictor(cfg)
-im = cv2.imread("dmyImgCap.jpg")
-outputs = predictor(im)
+# # load pre-trained Mask R-CNN model 
+# # BASED ON COLAB --> MAKE RASPI/UPBOARD FRIENDLY
+# cfg = get_cfg()
+# cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"))
+# cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, "dmyModle.pth")  # path to the model we just trained
+# cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1  # only has one class (ballon). (see https://detectron2.readthedocs.io/tutorials/datasets.html#update-the-config-for-new-datasets)
+# os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
 
 
-# create dicitonary of detections made (based on colab work)
+# # inference the image 
+# # BASED ON COLAB --> MAKE RASPI/UPBOARD FRIENDLY
+# cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5   # set a custom testing threshold
+# predictor = DefaultPredictor(cfg)
+# im = cv2.imread("dmyImgCap.jpg")
+
+# outputs = predictor(im)       #dict, colab format --> {'instances': Instances(..., fields =[pred_boxes:..., scores:...])}
+
+
+""" [UNCOMMENT AFTER OUTPUT VARIABLE EXISTS]
+# create dicitonary of detections made (based on colab work, may need changing if )
 # format --> {0: {'bbox': [3690.1355, 398.60562, 3997.3171, 568.5226], 'conf': 1.0, 1:...}
 detect_bbox = outputs["instances"].pred_boxes.tensor.cpu().numpy()
 detect_conf = outputs["instances"].scores.cpu().numpy()
