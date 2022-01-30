@@ -11,23 +11,25 @@ Output [type dict]: Dictionary of detections containing detection bounding
 Author(s): Billy Orion Mazotti
 
 Last Edited: 1/29/22
+
+WARNING: currently using stand-ins for captured image and CNN model.pth
 """
 
 # imports
 """ [NEEDS DEPENDENCIES SATISFIED --> @XB]
-"""
 import cv2
-
- 
-# load pre-trained Mask R-CNN model (based on colab work)
-""" [NEEDS .pth MODEL FILE --> @YC]
-cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, "[MODEL_FILE.pth]")  # path to the model we just trained
 """
+
+
+""" [UNCOMMENT AFTER ADDING DEPENDENCIES]
+# load pre-trained Mask R-CNN model (based on colab work)
+cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, "dmyModle.pth")  # path to the model we just trained
 
 # inference the image (based on colab work)
-""" [UNCOMMENT AFTER ADDING DEPENDENCIES AND MODEL.pth]
+
 cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5   # set a custom testing threshold
 predictor = DefaultPredictor(cfg)
+im = cv2.imread("dmyImgCap.jpg")
 outputs = predictor(im)
 
 
@@ -45,5 +47,3 @@ for i in range(num_detect):
   det_dict[i]["conf"] = round(detect_conf[i],2)
 """
 
-im = cv2.imread("dmyImgCap.jpg")
-print(type(im))
