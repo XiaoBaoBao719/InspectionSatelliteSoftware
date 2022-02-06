@@ -1,4 +1,3 @@
-
 def pixel_extraction(false_detections):
     pixel_list = []    # extracting pixel values and its coordinates for each false positive detections
     for i in false_detections:  #false_detections is a list of array containing the bounding box coordinates (x1,y1,x2,y2)
