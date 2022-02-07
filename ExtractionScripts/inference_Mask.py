@@ -10,7 +10,7 @@ Output [type dict]: Dictionary of detections containing detection bounding
 
 Author(s): Billy Orion Mazotti
 
-Last Edited: 1/29/22
+Last Edited: 2/6/22
 
 WARNING: currently using stand-ins for captured image and CNN model.pth
 """
