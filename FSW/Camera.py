@@ -29,9 +29,11 @@ class Camera():
     encoding = ''
     flush = ' --wrap '
     preview_mode = ''
+    height= 600
+    width = 600
     # --timeout from libcamera provides cmd line time of cam timeout, useful for try-catch
 
-    white_led = DriverLED("RPI4") # If using Raspberry Pi 4
+    #white_led = DriverLED("RPI4") # If using Raspberry Pi 4
     #white_led = DriverLED("CM4")  # If using Computer Module 4
 
     def __init__(self, exp, _delay, height, width):
@@ -43,19 +45,24 @@ class Camera():
         self.encoding = 'jpg'
         self.mode = 'libcamera-still '
         self.preview_mode = ' --nopreview ' # used only for debugging
+        self.outpath = out_path
+        self.output = ""
+        self.out_encoding = ""
+        self.height = ""
+        self.width = ""
 
     def takePicture(self, file_name):
         print("Taking a picture!")
 
-        output = str.join(' -o ', self.outpath + '\\' + file_name)
-        out_encoding = str.join(' -r ', self.encoding)
-        timeout = str.join(' -t ', self.timeout)
-        height = str.join(' --height ', self.pxl_height)
-        width = str.join(' --width ', self.pxl_width)
-        
-        self.config = str.join(self.mode, output, timeout, 
-                                height, width, out_encoding, 
-                                self.flush, self.preview_mode)
+        self.output = "".join('-o ' + self.outpath + '\\' + file_name)
+        self.out_encoding = "".join('-e ' + self.encoding)
+        self.timeout = "".join('-t ' + self.timeout)
+        self.height = "".join(' --height ' +  self.pxl_height)
+        self.width = "".join('--width ' + self.pxl_width)
+
+        param = (self.mode, self.output, self.timeout, self.height, self.width, self.out_encoding)
+        self.config = "".join(param)
+
         try:
             system(self.config)
         except Exception:
@@ -72,6 +79,10 @@ class Camera():
 
     # def turnOffLight(self):
     #     pass
+
+if __name__ == "__main__":
+    picam = Camera(exp = 4, delay = 3000, height = 600, width = 600)
+    picam.takePicture("test2.jpg")
 
     
 
