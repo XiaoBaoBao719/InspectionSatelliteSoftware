@@ -1,4 +1,4 @@
-""" Pass Image into Mask R-CNN Model
+""" Pass Image into Mask R-CNN Model --> code within this script will become funciton "Inference_Mask" that returns type dictionary "det_dict"
 
 Runs Mask model and returns detection data for further analysis
 
