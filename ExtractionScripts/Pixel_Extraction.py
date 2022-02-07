@@ -62,5 +62,5 @@ def pixel_extraction(false_detections):
                 i += 1
 
     len(pixel_list)
-    return (pixel_list)
+    return pixel_list   # output is pixel_list which is a list containing tuples of pixel values
 
