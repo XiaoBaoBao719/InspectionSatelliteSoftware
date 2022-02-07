@@ -39,7 +39,7 @@ class Camera():
         self.pxl_width = width
         self.exposure_time = exp
         self.delay = _delay
-        self.timeout = 5000
+        self.timeout = 5000 # 5 second MAX for timeout
         self.encoding = 'jpg'
         self.mode = 'libcamera-still '
         self.preview_mode = ' --nopreview ' # used only for debugging

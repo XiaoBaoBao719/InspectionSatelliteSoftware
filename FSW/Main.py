@@ -19,7 +19,7 @@ Primary functions include:
 from os import *
 from time import time
 from loguru import RotationFunction, logger
-from pathlib import Path, WindowsPath
+from pathlib import Path, WindowsPath5
 
 import numpy as np
 import math
@@ -27,6 +27,7 @@ import math
 import RPi.GPIO as GPIO
 import serial
 import threading
+import json
 
 import Burnwire
 import DriverLED as led
@@ -288,6 +289,37 @@ def writePayloadData(results):
 
     ser.flush()
     return packetStatus
+
+def readStateMachine(self, file, state_var):
+    """ Reads a JSON file that holds the state variables and returns a string set based on the 
+        requested input message
+    """
+    try:
+        data = json.load(file)
+    except Exception:
+        print("Error reading the state variable file")  
+
+    for state in data:
+        print(state)
+
+    if state_var in data:
+        print("Here is the value for ", state_var)
+        print(data[state_var])
+        return (data[state_var], True)
+    else:
+        print("Could not locate the State Variable!")
+        return("EMPTY STATE", False)
+    pass
+
+def writeStateMachine(self, file, state_var, new_val):
+    """ Writes to a JSON file that holds the 
+    """
+    with open(file, 'r') as f:
+        new_val = f.read().replace(state_var, new_val)
+    with open(file, 'w') as f:
+        f.write(new_val)
+
+    return True
 
 def setup(self):
     """ Performs initial bootup sequence once and deploys the payload mechanism
