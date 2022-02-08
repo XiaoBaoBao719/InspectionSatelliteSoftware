@@ -93,10 +93,10 @@ def extractLB(LB_json_file):
 
     
     # writing to sample.json
-    with open("datasetNEW.json", "w") as outfile:
+    with open("SimTest_2_8_22.json", "w") as outfile:
         outfile.write(json_object)
 
 # input directory of labelbox json file
-LabelBox_josn_directory = 'export-2022-01-07.json'
+LabelBox_josn_directory = 'export-2022-02-08.json'
 
 extractLB(LabelBox_josn_directory)
