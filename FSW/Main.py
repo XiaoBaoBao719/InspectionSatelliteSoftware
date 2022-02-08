@@ -29,6 +29,8 @@ import serial
 import threading
 import json
 
+from serial.serialutil import SerialException
+
 import Burnwire
 import DriverLED as led
 import Camera as cam
@@ -134,28 +136,35 @@ def serialSetup():
     ----------
     ser: Serial
         Serial object handles UART comms protocol with S/C
+    
+    Return
+    ---------
+        Serial object if successful connection and setup established, 
+        otherwise, return None
     """
-    SCIENCE = True
+    #SCIENCE = True
     # Initialize Serial Port
-    ser = serial.Serial(port=SERIAL_PORT, baudrate=BAUDRATE,
-                        parity=serial.PARITY_ODD,timeout=SYS_TIMEOUT,
-                        stopbits=serial.STOPBITS_ONE,bytesize=serial.EIGHTBITS)
-    counter = 0
+    try:
+        ser = serial.Serial(port=SERIAL_PORT, baudrate=BAUDRATE,
+                            parity=serial.PARITY_ODD,timeout=SYS_TIMEOUT,
+                            stopbits=serial.STOPBITS_ONE,bytesize=serial.EIGHTBITS)
+    except SerialException as e:
+        print("Issue with setting up UART connection!")
+        print(e)
+        return None
+    #counter = 0
     print(ser.name)
     ser.write(b'CV_Payload_Active')
     ser.open()
-    
+    return ser
 
 def verifySystem(serial):
     """ Performs system diagnotic checks on power, temperature, lighting, and comms
-
     Arguments
     ----------
     serial: Serial
         Serial object returns the status of the serial connection to the S/C FC, can ping
         for timeout and data packet state
-        
-    
     Returns
     ---------
     False if any system related check function either also returns false or times out
@@ -171,14 +180,12 @@ def verifySystem(serial):
 
 def checkTempCPU():
     """ Checks the SoC temperature in the core processor
-        
     Parameters
     ----------
     result: string
         Shell command to pull measured processor temperature
     temperature: float
         CPU processing temperature in degrees Celsius by pulling a substring of output
-    
     Returns
     ---------
     True of the processor is within a temperature range set by MAX_TEMP
@@ -197,15 +204,14 @@ def reboot():
     """ Shell command to restart the RPi
     """
     system('sudo restart')
-    pass
 
-def takePicture(exposureTime, delay, width, height):
-    """TODO: Perform cam connection check, lighting check"""
-    system('libcamera-jpeg -o handrail-input.jpg -t 5000 --width 800 --height 600')
-    pass
+# DEPRECATED FUNCTION: 
+# def takePicture(exposureTime, delay, width, height):
+#     """TODO: Perform cam connection check, lighting check"""
+#     system('libcamera-jpeg -o handrail-input.jpg -t 5000 --width 800 --height 600')
+#     pass
 
-
-def performInference(model, source):
+def runInference(model, source):
     """ Calls CV models one after another, ensuring that light and dark lighting
         conditons are also created for each CV model
     TODO: Need to determine fault handling for if a model fails to perform successful inference
@@ -233,18 +239,17 @@ def performInference(model, source):
     return [{'Light': (detectron_results_lit, yolo_results_lit)} ,
             {'Dark':(detectron_results_dark, yolo_results_dark)}]
     
-    
-def writePayloadData(results):
+def writePayloadData(results, ser):
     """ Takes CV inference results from the model and writes the data to the S/C FC
         via UART serial protocol
-
     Arguments
     ----------
-    results: string
+    results : string
         A properly formatted dataframe in the format of a string
         TODO: results is probably a dataframe and must be converted into a string and
         then converted into bytes for the input buffer
-        
+    ser : Serial
+        A Serializable object that performs UART comms to the main flight S/C computer
     Parameters
     ----------
     bytesInBuffer: int
@@ -253,19 +258,17 @@ def writePayloadData(results):
         TODO: implement better timer var to track payload write process
     packetStatus: bool
         Carries the status of the write process
-    
     Exceptions
     ---------
     SerialTimeoutException: Exception raised by Serial object if the connection
     times out, if so, restart the system serial connection.
-
     Returns
     ---------
     True if the data packet was sent without any isses
     False if otherwise
     """
     packetStatus = False
-    counter = 0
+    #counter = 0
     while True:
         try:
             ser.write(b'Writing CV results: \n'%(results))
@@ -281,12 +284,10 @@ def writePayloadData(results):
         print(ser.out_waiting())
         print("Packet sent")
         time.sleep(1) # Wait one second for packet to send
-        counter += 1
-
+        #counter += 1
         if(bytesInBuffer is None):
             packetStatus = True
             break
-
     ser.flush()
     return packetStatus
 
@@ -331,10 +332,11 @@ def writeStateVariable(self, file, state_var, new_val):
         state_var : string 
             state_var is the desired state variable that we want to read a value
             for
-        out_val : tuple
-            out_val is a string that holds the value read
+        Return:
+            True if the new state was successfully found and written to the 
+            state variables file. False if unsuccessful.
     """
-    temp = {}
+    temp = {} # temporary dctionary python object to hold json state information
     try:
         with open("test_json.json", 'r') as json_out:
             new_msg = json.loads(json_out.read())
@@ -349,7 +351,6 @@ def writeStateVariable(self, file, state_var, new_val):
 
     with open(file, 'r') as f: #Debugging statement to read what was written
         print(f.read())
-
     return True
 
 def setup(self):

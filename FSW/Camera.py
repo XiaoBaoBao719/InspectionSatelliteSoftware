@@ -5,15 +5,12 @@ from pathlib import Path, WindowsPath
 
 import serial
 import threading
-import DriverLED
 
 # =====================================
 # ==         GLOBAL VARS         ==
 # =====================================
 
-out_path = "\home\pi\Desktop"
-#HEIGHT = 0
-#WIDTH = 0
+out_path = "\home\pi\Desktop" # file path to the directory that will store the image from camera
 
 class Camera():
 
@@ -31,10 +28,9 @@ class Camera():
     preview_mode = ''
     height= 600
     width = 600
-    # --timeout from libcamera provides cmd line time of cam timeout, useful for try-catch
 
-    #white_led = DriverLED("RPI4") # If using Raspberry Pi 4
-    #white_led = DriverLED("CM4")  # If using Computer Module 4
+    num_pics_taken = 0
+    # --timeout from libcamera provides cmd line time of cam timeout, useful for try-catch
 
     def __init__(self, exp, _delay, height, width):
         self.pxl_height = height
@@ -69,16 +65,11 @@ class Camera():
             print("Failed to take picture due to raised exception: ", system.exec_info()[2])
             return False
         #system('libcamera-jpeg -o handrail-input.jpg -t 5000 --width 800 --height 600')
+        self.num_pics_taken += 1
         return True
 
     def getNumPicsTake(self):
-        pass
-
-    # def turnOnLight(self):
-    #     pass
-
-    # def turnOffLight(self):
-    #     pass
+        return self.num_pics_taken
 
 if __name__ == "__main__":
     picam = Camera(exp = 4, delay = 3000, height = 600, width = 600)
