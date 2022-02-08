@@ -290,34 +290,65 @@ def writePayloadData(results):
     ser.flush()
     return packetStatus
 
-def readStateMachine(self, file, state_var):
+def readStateVariable(self, file, state_var):
     """ Reads a JSON file that holds the state variables and returns a string set based on the 
         requested input message
+
+        file : string
+            file is a link to the filepath holding the json state variables
+        state_var : string 
+            state_var is the desired state variable that we want to read a value
+            for
+        out_val : tuple
+            out_val is a string that holds the value read
     """
+    temp = {} # temporary Python dictionary to hold state variables
     try:
-        data = json.load(file)
+        #data = json.load(file)
+        with open(file, 'r') as json_out:
+            temp = json.loads(json_out.read()) # gets a string, converts to dict
+            print(temp)
     except Exception:
-        print("Error reading the state variable file")  
+        print("Error reading the state variable file")
+        return ("NO_VALUE", False) 
 
-    for state in data:
-        print(state)
+    for state in temp: # USED FOR DEBUGGING ONLY
+        print(state)    # prints all of the state variables
 
-    if state_var in data:
+    if state_var in temp:
         print("Here is the value for ", state_var)
-        print(data[state_var])
-        return (data[state_var], True)
+        print(temp[state_var])
+        return (temp[state_var], True)
     else:
         print("Could not locate the State Variable!")
         return("EMPTY STATE", False)
-    pass
 
-def writeStateMachine(self, file, state_var, new_val):
-    """ Writes to a JSON file that holds the 
+def writeStateVariable(self, file, state_var, new_val):
+    """ Writes to a JSON file that holds the
+
+        file : string
+            file is a link to the filepath holding the json state variables
+        state_var : string 
+            state_var is the desired state variable that we want to read a value
+            for
+        out_val : tuple
+            out_val is a string that holds the value read
     """
-    with open(file, 'r') as f:
-        new_val = f.read().replace(state_var, new_val)
-    with open(file, 'w') as f:
-        f.write(new_val)
+    temp = {}
+    try:
+        with open("test_json.json", 'r') as json_out:
+            new_msg = json.loads(json_out.read())
+            #print(type(new_msg["name"]))
+            new_msg.update(state_var=new_val)
+            temp = new_msg
+        with open("test_json.json", 'w') as json_out:
+            json_out.write(json.dumps(temp))
+    except Exception:
+        print("Issue with writing the State Variables!")
+        return False
+
+    with open(file, 'r') as f: #Debugging statement to read what was written
+        print(f.read())
 
     return True
 
