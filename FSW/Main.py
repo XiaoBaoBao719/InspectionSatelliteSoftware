@@ -364,29 +364,45 @@ def setup(self):
     #initializeComputer()
     #serialSetup()
     #initializeBurnwire()
-    
-    # try-catch guarentees that the file is properly closed even when an exception is raised
-    # that could prevent us from closing the file
 
     # Write to the STATE_VARIABLE json:
     #   -Increase the boot counter
+
+    boot_counter_str = readStateVariable(state_variables_path, "BOOT_COUNTER")
+
+    # Attempt to read the boot counter and cast to an integer, assumes that the boot counter 
+    # is called correctly
     try:
-        self.init_file = open(parameterDB_path_name,mode='w',encoding='utf-8')
-        # Increment Boot Counter
-        # Search file for 'bootCounter'
-        while(True):
-            current_line = self.init_file.readline()
-            if 'bootCounter' in current_line:
-                print(self.init_file.tell())
-                counter = int(filter(str.isdigit, current_line))
-                counter += 1
-                self.init_file.seek(-3, self.init_file.tell())
-                self.init_file.write(str(counter))
-                break
-            elif current_line is '':
-                break
-    finally:
-        self.init_file.close()
+        current_num_boots = int(boot_counter_str[0])
+    except TypeError as e:
+        print("Issue with reading for the boot counter!")
+        print(e)
+        current_num_boots = 0
+
+    # Increment the boot counter by one
+    current_num_boots += 1
+    # Write the new number of boots to the state variables
+    writeStateVariable(state_variables_path, "BOOT_COUNTER", current_num_boots)
+
+    # try-catch guarentees that the file is properly closed even when an exception is raised
+    # that could prevent us from closing the file
+    # try:
+    #     self.init_file = open(parameterDB_path_name,mode='w',encoding='utf-8')
+    #     # Increment Boot Counter
+    #     # Search file for 'bootCounter'
+    #     while(True):
+    #         current_line = self.init_file.readline()
+    #         if 'bootCounter' in current_line:
+    #             print(self.init_file.tell())
+    #             counter = int(filter(str.isdigit, current_line))
+    #             counter += 1
+    #             self.init_file.seek(-3, self.init_file.tell())
+    #             self.init_file.write(str(counter))
+    #             break
+    #         elif current_line is '':
+    #             break
+    # finally:
+    #     self.init_file.close()
     # Check the deploy flag on init file
 
     try:
