@@ -84,6 +84,7 @@ SCIENCE = False
 MAX_TEMP = 85 # measured in degrees C (see datasheet -20C - +85C)
 current_time = 0
 parameterDB_path_name = '\home\pi\Desktop\ParameterDB'
+state_variables_path = '\home\pi\Desktop\STATE_VARIABLES.json'
 init_file = ""
 deployed = False
 burnwireFired = False
@@ -366,6 +367,9 @@ def setup(self):
     
     # try-catch guarentees that the file is properly closed even when an exception is raised
     # that could prevent us from closing the file
+
+    # Write to the STATE_VARIABLE json:
+    #   -Increase the boot counter
     try:
         self.init_file = open(parameterDB_path_name,mode='w',encoding='utf-8')
         # Increment Boot Counter
