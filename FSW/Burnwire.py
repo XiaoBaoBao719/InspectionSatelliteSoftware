@@ -66,7 +66,7 @@ class Burnwire:
             self.burn_pwm_1.ChangeDutyCycle(self.duty_cycle)
         elif '2' in burn_num:
             self.burn_pwm_2.ChangeFrequency(self.freq)
-            self.burn_pwm_2ChangeDutyCycle(self.duty_cycle)
+            self.burn_pwm_2.ChangeDutyCycle(self.duty_cycle)
         else:
             return False
         
