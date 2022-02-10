@@ -17,16 +17,17 @@ WARNING: currently using stand-ins for captured image and CNN model.pth
 
 
 # imports
-""" [NEEDS DEPENDENCIES SATISFIED --> @XB]
-Functions that need library: get_cfg(), DefaultPredictor(), cv2.imread()
+# [NEEDS DEPENDENCIES SATISFIED --> @XB]
+# Functions that need library: get_cfg(), DefaultPredictor(), cv2.imread()
 
+import os
+from detectron2 import model_zoo
 from detectron2.config import get_cfg
 from detectron2.engine import DefaultPredictor
 import cv2
-"""
 
 
-model_filename = "model_0004999.pth"    #located in output.zip folder
+#model_filename = "/home/xiaobao/InspectionSatCV/ExtractionScripts/model_0004999.pth"    #located in output.zip folder
 im = cv2.imread("capImg_multi.jpg")     #located in same directory as inference_mask.py
 inference_threshold = 0.02
 
@@ -34,7 +35,12 @@ inference_threshold = 0.02
 # load pre-trained Mask R-CNN model 
 cfg = get_cfg()
 cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"))
-cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, model_filename)  # path to the model we just trained
+#cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, model_filename)  # path to the model we just trained
+cfg.MODEL.WEIGHTS = "/home/xiaobao/InspectionSatCV/ExtractionScripts/model_0004999.pth"
+# FOR DEBUGGING ONLY
+cfg.MODEL.DEVICE = 'cpu'
+
+
 cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1  # only has one class (ballon). (see https://detectron2.readthedocs.io/tutorials/datasets.html#update-the-config-for-new-datasets)
 os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
 
