@@ -361,9 +361,7 @@ def setup(self):
     ----------
     val: 
     """
-    #initializeComputer()
-    #serialSetup()
-    #initializeBurnwire()
+    ser = serialSetup() # Setup UART protocol with main flight computer
 
     # Write to the STATE_VARIABLE json:
     #   -Increase the boot counter
@@ -448,7 +446,8 @@ def setup(self):
     elif deployed is True:
         # Move on to Define and Initialize Systems
         pass
-        
+
+
         # try:
         #     self.init_file = open(parameterDB_path_name,mode='w',encoding='utf-8')
         #     # Search file for 'deployedFlag'
@@ -471,9 +470,20 @@ def setup(self):
         # finally:
         #  self.init_file.close()
 
-    else:
-        # Initialize and define the systems
-        pass
+    # Loop to check the Photodiode. Should this run as a parallel process?
+
+    # While the Photodiode is "dark" and DEPLOYED is FALSE
+        # Increment NUMBER_DARK_READINGS++
+
+        # If NUMBER_DARK_READINGS > 10
+
+            # Run the Burnwire again
+
+            # Reset NUMMBER_DARK_READINGS = 0
+
+            # Sleep 5 minutes
+        
+    # Set DEPLOYED to TRUE
                 
     if not verifySystem():
         reboot()
