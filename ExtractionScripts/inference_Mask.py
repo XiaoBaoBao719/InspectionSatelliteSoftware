@@ -36,9 +36,9 @@ inference_threshold = 0.02
 cfg = get_cfg()
 cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"))
 #cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, model_filename)  # path to the model we just trained
-cfg.MODEL.WEIGHTS = "/home/xiaobao/InspectionSatCV/ExtractionScripts/model_0004999.pth"
+#cfg.MODEL.WEIGHTS = "/home/xiaobao/InspectionSatCV/ExtractionScripts/model_0004999.pth"
 # FOR DEBUGGING ONLY
-cfg.MODEL.DEVICE = 'cpu'
+#cfg.MODEL.DEVICE = 'cpu'
 
 
 cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1  # only has one class (ballon). (see https://detectron2.readthedocs.io/tutorials/datasets.html#update-the-config-for-new-datasets)
@@ -63,3 +63,4 @@ for i in range(num_detect):
   det_dict[i]["bbox"] = list(detect_bbox[i])
   det_dict[i]["conf"] = round(detect_conf[i],5)
 
+print(det_dict)

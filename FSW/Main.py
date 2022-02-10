@@ -375,7 +375,7 @@ def setup(self):
     try:
         current_num_boots = int(boot_counter_str[0])
     except TypeError as e:
-        print("Issue with reading for the boot counter!")
+        print("Issue with reading for the state variable: BOOT_COUNTER!")
         print(e)
         current_num_boots = 0
 
@@ -383,8 +383,6 @@ def setup(self):
     current_num_boots += 1
     # Write the new number of boots to the state variables
     writeStateVariable(state_variables_path, "BOOT_COUNTER", current_num_boots)
-
-    
 
     # try-catch guarentees that the file is properly closed even when an exception is raised
     # that could prevent us from closing the file
@@ -407,56 +405,71 @@ def setup(self):
     #     self.init_file.close()
     # Check the deploy flag on init file
 
-    try:
-        self.init_file = open(parameterDB_path_name,mode='r',encoding='utf-8')
-        # Search file for 'deployedFlag'
-        while(True):
-            current_line = self.init_file.readline()
-            if 'deployedFlag' in current_line:
-                if 'False' in current_line:
-                    print(self.init_file.tell())
-                    print("Deployed Flag is False")
-                    self.deployed = False
-                    break
-                elif 'True' in current_line:
-                    print(self.init_file.tell())
-                    print("Deployed Flag is True")
-                    self.deployed = True
-                    break
-            elif current_line is '':
-                break
-    finally:
-        self.init_file.close()
-    
-    if self.deployed is False:
-        # Fire the Burnwire
-        burnwire = Burnwire(2, 5000, 0)
-        burnwire.getBurnwireStatus()
-        burnwire.burn()
-        burnwire.destroy()
+    read_out = readStateVariable(state_variables_path, "DEPLOYED") # Check for the state variable for DEPLOYED
 
-        # Set burnwireFired to true
-        try:
-            self.init_file = open(parameterDB_path_name,mode='w',encoding='utf-8')
-            # Search file for 'deployedFlag'
-            while(True):
-                current_line = self.init_file.readline()
-                if 'burnwireFired' in current_line:
-                    if 'False' in current_line:
-                        print(self.init_file.tell())
-                        print("Burnwire Flag was False") #TODO: Need a better way of doing this
-                        self.init_file.write(str.replace('False','True'))
-                        self.burnwireFired = True
-                        break
-                    elif 'True' in current_line:
-                        print(self.init_file.tell())
-                        print("Burnwire Flag was True")
-                        self.deployed = True
-                        break
-                elif current_line is '':
-                    break
-        finally:
-         self.init_file.close()
+    try:
+        deployed = read_out[0] # Get the state variable for Deployed
+    except TypeError as e:
+        print("ISSUE WITH READING THE STATE VARIABLE: DEPLOYED")
+        print(e)
+    
+    # try:
+    #     self.init_file = open(parameterrun
+
+    #         current_line = self.init_file.readline()
+    #         if 'deployedFlag' in current_line:
+    #             if 'False' in current_line:
+    #                 print(self.init_file.tell())
+    #                 print("Deployed Flag is False")
+    #                 self.deployed = False
+    #                 break
+    #             elif 'True' in current_line:
+    #                 print(self.init_file.tell())
+    #                 print("Deployed Flag is True")
+    #                 self.deployed = True
+    #                 break
+    #         elif current_line is '':
+    #             break
+    # finally:
+    #     self.init_file.close()
+    
+    # If deployed is FALSE, create a Burnwire() object and invoke the burn function
+    # Runs .burn() for both pins at 5000 Hz for 1 second
+
+    if deployed is False and deployed is not None:
+        #burnwire_1 = Burnwire(1, 5000, 0)
+        burnwire = Burnwire(2, 5000, 0)
+        #burnwire_1.getBurnwireStatus()
+        burnwire.getBurnwireStatus()
+        burnwire.burn(1, 100, 5000, 1) # Start pin 1 burn routine
+        burnwire.burn(2, 100, 5000, 1) # Start pin 2 burn routine
+        burnwire.destroy()
+        writeStateVariable(state_variables_path, "BURNWIRE_FIRED", True) # Sets State Variable for burnwire fire event to TRUE
+    elif deployed is True:
+        # Move on to Define and Initialize Systems
+        pass
+        
+        # try:
+        #     self.init_file = open(parameterDB_path_name,mode='w',encoding='utf-8')
+        #     # Search file for 'deployedFlag'
+        #     while(True):
+        #         current_line = self.init_file.readline()
+        #         if 'burnwireFired' in current_line:
+        #             if 'False' in current_line:
+        #                 print(self.init_file.tell())
+        #                 print("Burnwire Flag was False") #TODO: Need a better way of doing this
+        #                 self.init_file.write(str.replace('False','True'))
+        #                 self.burnwireFired = True
+        #                 break
+        #             elif 'True' in current_line:
+        #                 print(self.init_file.tell())
+        #                 print("Burnwire Flag was True")
+        #                 self.deployed = True
+        #                 break
+        #         elif current_line is '':
+        #             break
+        # finally:
+        #  self.init_file.close()
 
     else:
         # Initialize and define the systems
