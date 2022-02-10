@@ -384,6 +384,8 @@ def setup(self):
     # Write the new number of boots to the state variables
     writeStateVariable(state_variables_path, "BOOT_COUNTER", current_num_boots)
 
+    
+
     # try-catch guarentees that the file is properly closed even when an exception is raised
     # that could prevent us from closing the file
     # try:
