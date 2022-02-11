@@ -3,7 +3,7 @@
 
 Input: 
 --> External: truthPolygon.json [type file], det_dict [type dict]
---> Internal: iou_threshold [type float], MAX_TP [type int], MAX_FP [type int]
+--> Internal: iou_threshold [type float], MAX_TP [type int], MAX_FP [type int], MAX_FP_RGB [type int]
 Output: 
 --> outString: TP_record [type list], FP_record [type list]
 --> falseposInspect: FP_RGB_record [type list]
@@ -17,6 +17,7 @@ Last Edited: 2/10/22
 
 import json
 import numpy as np
+import inference_Mask
 
 def BB_IOU(boxA, boxB):
     """https://gist.github.com/meyerjo/dd3533edc97c81258898f60d8978eddc"""
@@ -43,10 +44,11 @@ def BB_IOU(boxA, boxB):
     return iou
 
 # EXTERNAL INPUTS
-truthPolygon = "SimTest_2_8_22.json"
-iou_threshold = 0.5
+det_dict = inference_Mask.det_dict
+truthPolygon = "truthPolygon.json"
 
 # INTERNAL INPUTS (DOWNLINK DRIVEN)
+iou_threshold = 0.5
 MAX_TP = 3      # max number of true postiives to record
 MAX_FP = 10      # max number of false postiives to record
 MAX_FP_RGB = 3    # max number of flase positives of interest for RGB analysis
@@ -54,7 +56,7 @@ MAX_FP_RGB = 3    # max number of flase positives of interest for RGB analysis
 if (MAX_FP_RGB>MAX_FP):
   print("Error: number of false positives for RGB analysis (FP_4_RGB)\
  is greater than the max number of recorded false positives (MAX_FP)")
-  
+
 
 # IMPORT TRUTH BBOX LOCATION FOR IOU CALCS
 with open(truthPolygon, 'r') as f:
