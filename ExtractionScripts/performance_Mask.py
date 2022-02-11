@@ -42,10 +42,11 @@ def BB_IOU(boxA, boxB):
     # return the intersection over union value
     return iou
 
+# EXTERNAL INPUTS
 truthPolygon = "SimTest_2_8_22.json"
 iou_threshold = 0.5
 
-# DOWNLINK-DRIVEN VARIABLES
+# INTERNAL INPUTS (DOWNLINK DRIVEN)
 MAX_TP = 3      # max number of true postiives to record
 MAX_FP = 10      # max number of false postiives to record
 MAX_FP_RGB = 3    # max number of flase positives of interest for RGB analysis
