@@ -17,7 +17,6 @@ WARNING: currently using stand-ins for captured image and CNN model.pth
 
 
 # imports
-# [NEEDS DEPENDENCIES SATISFIED --> @XB]
 # Functions that need library: get_cfg(), DefaultPredictor(), cv2.imread()
 
 import os
@@ -50,13 +49,13 @@ predictor = DefaultPredictor(cfg)
 
 outputs = predictor(im)       #dict, colab format --> {'instances': Instances(..., fields =[pred_boxes:..., scores:...])}
 
-# create dicitonary of detections made (based on colab work, may need changing if )
+# create dicitonary of detections made
 # format --> {0: {'bbox': [3690.1355, 398.60562, 3997.3171, 568.5226], 'conf': 1.0, 1:...}
 detect_bbox = outputs["instances"].pred_boxes.tensor.cpu().numpy()
 detect_conf = outputs["instances"].scores.cpu().numpy()
 num_detect = len(outputs["instances"].pred_boxes.tensor)
 
-# gather bbox coordinates and confidence for each deteciton per image ((based on colab work))
+# gather bbox coordinates and confidence for each deteciton per image
 det_dict = {}
 for i in range(num_detect):
   det_dict[i] = {"bbox":{}, "conf":{}}
