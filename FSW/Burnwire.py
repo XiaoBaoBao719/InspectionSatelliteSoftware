@@ -1,3 +1,14 @@
+""" Burnwire Class
+@author: Xiao-Bao Bao
+@license: GNU Commons
+@version 1.0
+
+@brief BUrnwire Python source file 
+
+Uses Raspberry Pi GPIO pins in order to control S/C burnwire configuration and deployment
+via the use of Pulse WIdth Modulation (PWM) pin output.
+"""
+
 from RPIO import PWM
 from time import sleep
 import RPi.GPIO as GPIO
@@ -55,7 +66,8 @@ class Burnwire:
             Contains the digital photodiode readings
         Returns
         ---------
-        pass
+        Returns True if GPIO pins specified were correctly set to desired values
+        via PWM. Otherwise, return False in the event of an anomally.
         """
         self.freq = freq
         self.duty_cycle = duty_cycle
@@ -78,46 +90,15 @@ class Burnwire:
         self.burn_pwm_1.ChangeDutyCycle(0)
         self.burn_pwm_2.ChangeDutyCycle(0)
         self.destroy()
-        
-        # Immediately perform burnwire deploy for 5 seconds
-        #GPIO.output(BURNWIRE_PINS, GPIO.HIGH)
-        #prtStatus = GPIO.output(BURNWIRE_PINS, not GPIO.input(BURNWIRE_PINS))
-        #time.sleep(5) # Wait 5 seconds
-        # Shutdown burnwire!
-        #GPIO.output(BURNWIRE_PINS, GPIO.LOW)
-        #prtStatus += GPIO.output(BURNWIRE_PINS, not GPIO.input(BURNWIRE_PINS)) # Report to sys diagnostic
-        #time.sleep(10) # Wait 10 seconds
-        #pass
+
         return True
     
     def destroy(self):
+        """ Ensures that burnwire output pins cease running and 
+            cleans up memory.
+        """
         self.burn_pwm_1.stop()
         self.burn_pwm_2.stop()
         GPIO.cleanup()
 
 
-# GPIO.setmode(GPIO.BOARD)
-# GPIO.setup(BURN_PIN_1, GPIO.OUT, initial = GPIO.LOW)
-# GPIO.setup(BURN_PIN_2, GPIO.OUT, initial = GPIO.LOW)
-# GPIO.setup(INPUT_PIN, GPIO.IN)
-# GPIO.setup(PHOTODIODE_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-# 
-# # Immediately perform burnwire deploy for 5 seconds
-# GPIO.output(burnChanList, GPIO.HIGH)
-# prtStatus = GPIO.output(burnChanList, not GPIO.input(burnChanList))
-# time.sleep(5) # Wait 5 seconds
-# # Shutdown burnwire!
-# GPIO.output(burnChanList, GPIO.LOW)
-# prtStatus += GPIO.output(burnChanList, not GPIO.input(burnChanList)) # Report to sys diagnostic
-# time.sleep(2) # Wait 2 seconds
-# 
-# if burnwireNotDeployed():
-#     prtStatus += "Burnwire not deployed, trying again"
-#     # Initialize timer to zero, run for 20 mins
-# 
-# 
-#     # Check if burnwire deploy successful 
-#     while GPIO.input(PHOTODIODE_PIN) == GPIO.low and timer < 20:
-#         # Tell the Main class to not run the Camera Science packet
-#         prtStatus += "Waiting for confirmation of successful burnwire"
-# GPIO.cleanup()
