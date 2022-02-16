@@ -3,9 +3,10 @@
 Extracts BGR values of pixels covering the handrail  the for determining lighting environment
 
 Input [type XX, type json]: in-flight captured image, truthBGR_xy_coor.json
-Output [n/a]: BGR values for known pixel locations (locations are determined 
-        post-integration/pre-handoff and stored in truthBGR_xy_coor.json); 
-        write output to outputData.json
+Output [n/a]: clear outputData.json and write (to outputData.json )BGR values 
+                for known pixel locations (locations are determined 
+                post-integration/pre-handoff and stored in truthBGR_xy_coor.json); 
+                write output to outputData.json
 
 Author(s): Billy Orion Mazotti
 
@@ -33,4 +34,5 @@ for i in range(len(pix_xy)):
     B,G,R = orig_img[y_BGR,x_BGR]
     pix_BGR.append([B,G,R])
 
-OUTPUT_pix_BGR = str(pix_BGR)
+with open("outputData.json", "w") as outfile:
+    outfile.write(str(pix_BGR))

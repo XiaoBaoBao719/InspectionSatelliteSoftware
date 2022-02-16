@@ -61,5 +61,3 @@ for i in range(num_detect):
   det_dict[i] = {"bbox":{}, "conf":{}}
   det_dict[i]["bbox"] = list(detect_bbox[i])
   det_dict[i]["conf"] = round(detect_conf[i],5)
-
-print(det_dict)

@@ -43,6 +43,7 @@ def BB_IOU(boxA, boxB):
     # return the intersection over union value
     return iou
 
+
 # EXTERNAL INPUTS
 det_dict = inference_Mask.det_dict
 truthPolygon = "truthPolygon.json"
@@ -52,6 +53,8 @@ iou_threshold = 0.5
 MAX_TP = 3      # max number of true postiives to record
 MAX_FP = 10      # max number of false postiives to record
 MAX_FP_RGB = 3    # max number of flase positives of interest for RGB analysis
+CONFIDENCE_SIG_FIGS = 3
+
 
 if (MAX_FP_RGB>MAX_FP):
   print("Error: number of false positives for RGB analysis (FP_4_RGB)\
@@ -170,3 +173,18 @@ for detection in range(FP_4_RGB):
 print("TP downlinked: ", TP_record)
 print("FP downlinked: ",FP_record)
 print("FP downlinked: ",FP_RGB_record)
+
+
+with open("outputData.json", 'r') as f:
+    outputData = json.load(f)
+
+for i in range(len(TP_record)):
+  outputData.append(outputData, TP_record[i]['bbox'])
+  outputData.append(outputData, round(TP_record[i]['conf'],CONFIDENCE_SIG_FIGS))
+
+for i in range(len(FP_record)):
+  outputData.append(outputData, FP_record[i]['bbox'])
+  outputData.append(outputData, round(FP_record[i]['conf'],CONFIDENCE_SIG_FIGS))
+
+with open("outputData.json", "w") as outfile:
+  outfile.write(str(outputData))
