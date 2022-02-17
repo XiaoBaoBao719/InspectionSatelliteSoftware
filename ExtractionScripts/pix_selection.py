@@ -2,7 +2,7 @@
 
 Selects and creates list of [x,y] coordinaetes within field of view
 
-Input: post-assembly/pre-handoff image, polygonHandrail.json
+Input: post-assembly/pre-handoff image, viaPolygon.json
 Output: write [x,y] coordinates list to truthBGR_cy_coor.json
 
 Author(s): Billy Orion Mazotti
@@ -77,8 +77,8 @@ BGR_gray = (220,220,220)
 
 
 ############### CALIBRATION IMPORTS ###############
-LB_json_file = "datasetRender.json"                 #.# json created from LB2VIA_extract
-image_directory = "handrail_calib_1.jpg"            #.# caputred image
+LB_json_file = "viaPolygon.json"                 #.# json created from LB2VIA_extract
+image_directory = "handrail_calib_1.jpg"           #.# pre-flight caputred image
 
 
 ############### CALIBRATION PARAMETERS ###############

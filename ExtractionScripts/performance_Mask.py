@@ -2,7 +2,7 @@
 [DETAILED DESCRIPTION]
 
 Input: 
---> External: truthPolygon.json [type file], det_dict [type dict]
+--> External: viaPolygon.json [type file], inference_Mask.det_dict [type dict]
 --> Internal: iou_threshold [type float], MAX_TP [type int], MAX_FP [type int], MAX_FP_RGB [type int]
 Output: 
 --> outString: TP_record [type list], FP_record [type list]
@@ -11,7 +11,7 @@ Output:
 
 Author(s): Billy Orion Mazotti
 
-Last Edited: 2/10/22
+Last Edited: 2/16/22
 
 """
 
@@ -45,8 +45,8 @@ def BB_IOU(boxA, boxB):
 
 
 # EXTERNAL INPUTS
-det_dict = inference_Mask.det_dict
-truthPolygon = "truthPolygon.json"
+det_dict = inference_Mask.det_dict    # dictionary of detections from inference_Mask.py
+viaPolygon = "viaPolygon.json"    # LB
 
 # INTERNAL INPUTS (DOWNLINK DRIVEN)
 iou_threshold = 0.5
@@ -62,7 +62,7 @@ if (MAX_FP_RGB>MAX_FP):
 
 
 # IMPORT TRUTH BBOX LOCATION FOR IOU CALCS
-with open(truthPolygon, 'r') as f:
+with open(viaPolygon, 'r') as f:
     polyDict = json.load(f)
 
 img_file_name = list(polyDict.keys())[0]
