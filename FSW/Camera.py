@@ -95,7 +95,7 @@ class Camera():
         self.image_contrast = " --contrast {0}".format() 
         self.image_brightness = " --brightness {0}".format() 
         self.image_saturation = " --saturation {0}".format() 
-        self.image_iso = " --saturation {0}".format() 
+        self.image_iso = "" 
         self.framerate = " --framerate {0}".format() """
 
 
