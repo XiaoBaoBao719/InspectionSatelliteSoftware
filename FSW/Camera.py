@@ -117,6 +117,7 @@ class Camera():
 # For debugging purposes only
 if __name__ == "__main__":
     picam = Camera(exp = 4, delay = 3000, height = 600, width = 600)
+
     picam.takePicture("test2.jpg")
 
     
