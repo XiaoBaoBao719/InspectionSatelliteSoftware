@@ -64,14 +64,18 @@ class Camera():
     num_pics_taken = 0
     # --timeout from libcamera provides cmd line time of cam timeout, useful for try-catch
 
-    def __init__(self, exp, _delay, height, width):
+    def __init__(self, exp, timeout, delay, height, width):
         """ Used to instantiate a Camera object with user-defined preferences for debugging.
         """
         self.pxl_height = height
         self.pxl_width = width
-        self.exposure_time = exp
-        self.delay = _delay
-        self.timeout = 5000 # 5 second MAX for timeout
+        self.exposure_time = " --shutter {0}".format(exp)                #set the exposure time in (ms)
+        '''set shutter speed numerically closest to the lens focal length
+         For example, for handheld use of a 35 mm camera with a 50 mm normal lens, 
+         the closest shutter speed is 1/60 s (closest to "50"), while for a 200 mm lens 
+         it is recommended not to choose shutter speeds below 1/200 of a second.'''
+        self.delay = delay
+        self.timeout = 5000 # 5 second MAX for timeout                   #takes picture after 5s of previewing
         self.encoding = 'jpg'
         self.mode = 'libcamera-still '
         self.preview_mode = ' --nopreview ' # used only for debugging
@@ -80,6 +84,20 @@ class Camera():
         self.out_encoding = ""
         self.height = ""
         self.width = ""
+        self.num_pics_taken = 0
+       
+        self.focus = " --autofocus"
+
+        """self.exposure_mode = " --exposure {0}".format()               # may be either normal, sport or long
+        self.ev = " --ev {0}".format()                                   # Sets the EV compensation of the image in units of stops, in the range -10 to 10. Default is 0.
+        self.gain = " --gain {0}".format() 
+        self.image_sharpness = " --sharpness {0}".format()               # image post-processing/calibration
+        self.image_contrast = " --contrast {0}".format() 
+        self.image_brightness = " --brightness {0}".format() 
+        self.image_saturation = " --saturation {0}".format() 
+        self.image_iso = " --saturation {0}".format() 
+        self.framerate = " --framerate {0}".format() """
+
 
     def takePicture(self, file_name : str):
         """ Used by Camera object to take a picture with libcamera. A file name is specified so that the 
@@ -97,7 +115,7 @@ class Camera():
         self.height = "".join(' --height ' +  self.pxl_height)
         self.width = "".join('--width ' + self.pxl_width)
 
-        param = (self.mode, self.output, self.timeout, self.height, self.width, self.out_encoding)
+        param = (self.mode, self.output, self.timeout, self.height, self.width, self.out_encoding, self.exposure_time, self.focus)
         self.config = "".join(param)
 
         try:
@@ -116,9 +134,11 @@ class Camera():
 
 # For debugging purposes only
 if __name__ == "__main__":
-    picam = Camera(exp = 4, delay = 3000, height = 600, width = 600)
+    picam = Camera(exp = 1000, timeout = 8, delay = 3000, height = 600, width = 600)
 
-    picam.takePicture("test2.jpg")
+    picam.takePicture("test{}".format(picam.getNumPicsTake()))
+
+
 
     
 
