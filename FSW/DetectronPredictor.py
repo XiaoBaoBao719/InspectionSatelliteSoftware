@@ -17,7 +17,6 @@ from detectron2.config import get_cfg
 from detectron2.utils.visualizer import Visualizer
 from detectron2.data import MetadataCatalog, DatasetCatalog
 
-
 from detectron2.structures import BoxMode
 
 
