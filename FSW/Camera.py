@@ -131,7 +131,7 @@ class Camera():
             return False
         #system('libcamera-jpeg -o handrail-input.jpg -t 5000 --width 800 --height 600')
         self.num_pics_taken += 1
-        self.num_gain +=1
+        
         
         print(self.config)
         return True
@@ -141,7 +141,7 @@ class Camera():
         """
         return self.num_pics_taken
     
-    def getNumGain(self):
+    def getGainVal(self):
         """ Returns the number of images successfully captured by the Camera object.
         """
         return self.gain_value
@@ -150,7 +150,7 @@ class Camera():
 if __name__ == "__main__":
     picam = Camera(exp = 8000, timeout = 10000, gain = 10, delay = 3000, height = 1080, width = 1920)
 
-    picam.takePicture("test{num}_{gain}".format(num = picam.getNumPicsTake(), gain = picam.getNumGain()))
+    picam.takePicture("test{num}_gain_{gain}".format(num = picam.getNumPicsTake(), gain = picam.getGainVal()))
     #picam.takePicture("test6.jpg")
     
     
