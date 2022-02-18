@@ -1,6 +1,7 @@
-from FSW.Main import EXPOSURE_TIME
+#from FSW.Main import EXPOSURE_TIME
 from os import *
-from RPi.GPIO import GPIO
+import RPi.GPIO as GPIO
+#from RPi.GPIO import GPIO
 from pathlib import Path, WindowsPath
 
 import serial
@@ -10,7 +11,7 @@ import threading
 # ==         GLOBAL VARS         ==
 # =====================================
 
-out_path = "\home\pi\Desktop" # file path to the directory that will store the image from camera
+out_path = "\home\pi\InspectionSatCV\FSW" # file path to the directory that will store the image from camera
 
 class Camera():
     """ Camera Class implements functionality in order to support Arducam by using the libcamera library.
@@ -64,7 +65,7 @@ class Camera():
     num_pics_taken = 0
     # --timeout from libcamera provides cmd line time of cam timeout, useful for try-catch
 
-    def __init__(self, exp, timeout, delay, height, width):
+    def __init__(self, exp, timeout, gain, delay, height, width):
         """ Used to instantiate a Camera object with user-defined preferences for debugging.
         """
         self.pxl_height = height
@@ -75,7 +76,7 @@ class Camera():
          the closest shutter speed is 1/60 s (closest to "50"), while for a 200 mm lens 
          it is recommended not to choose shutter speeds below 1/200 of a second.'''
         self.delay = delay
-        self.timeout = 5000 # 5 second MAX for timeout                   #takes picture after 5s of previewing
+        self.timeout = timeout #5000 # 5 second MAX for timeout                   #takes picture after 5s of previewing
         self.encoding = 'jpg'
         self.mode = 'libcamera-still '
         self.preview_mode = ' --nopreview ' # used only for debugging
@@ -85,8 +86,13 @@ class Camera():
         self.height = ""
         self.width = ""
         self.num_pics_taken = 0
+        self.num_gain = 0
+        self.gain = " --gain {0}".format(gain)
+        self.ev = " --ev {0}".format(6) 
+        self.awb = " --awb {0}".format("auto")           #awb = (auto, incandescent, tungsten, fluorescent)
+        self.gain_value = gain
        
-        self.focus = " --autofocus"
+        #self.focus = " --autofocus"
 
         """self.exposure_mode = " --exposure {0}".format()               # may be either normal, sport or long
         self.ev = " --ev {0}".format()                                   # Sets the EV compensation of the image in units of stops, in the range -10 to 10. Default is 0.
@@ -99,7 +105,7 @@ class Camera():
         self.framerate = " --framerate {0}".format() """
 
 
-    def takePicture(self, file_name : str):
+    def takePicture(self, file_name):
         """ Used by Camera object to take a picture with libcamera. A file name is specified so that the 
             output path will generate a unique image file in said output path. Uses CLI to generate the 
             image. 
@@ -109,14 +115,14 @@ class Camera():
         """
         print("Taking a picture!")
 
-        self.output = "".join('-o ' + self.outpath + '\\' + file_name)
-        self.out_encoding = "".join('-e ' + self.encoding)
-        self.timeout = "".join('-t ' + self.timeout)
-        self.height = "".join(' --height ' +  self.pxl_height)
-        self.width = "".join('--width ' + self.pxl_width)
+        self.output = "".join('-o ' + self.outpath + '\\' + file_name + ' ')
+        self.out_encoding = "".join(' -e ' + self.encoding)
+        self.timeout = "".join('-t ' + str(self.timeout))
+        self.height = "".join(' --height ' +  str(self.pxl_height) + ' ')
+        self.width = "".join('--width ' + str(self.pxl_width) + ' ')
 
-        param = (self.mode, self.output, self.timeout, self.height, self.width, self.out_encoding, self.exposure_time, self.focus)
-        self.config = "".join(param)
+        self.param = (self.mode, self.output, self.timeout, self.height, self.width, self.gain, self.exposure_time, self.ev, self.out_encoding)
+        self.config = "".join(self.param)
 
         try:
             system(self.config)
@@ -125,18 +131,29 @@ class Camera():
             return False
         #system('libcamera-jpeg -o handrail-input.jpg -t 5000 --width 800 --height 600')
         self.num_pics_taken += 1
+        self.num_gain +=1
+        
+        print(self.config)
         return True
 
     def getNumPicsTake(self):
         """ Returns the number of images successfully captured by the Camera object.
         """
         return self.num_pics_taken
+    
+    def getNumGain(self):
+        """ Returns the number of images successfully captured by the Camera object.
+        """
+        return self.gain_value
 
 # For debugging purposes only
 if __name__ == "__main__":
-    picam = Camera(exp = 1000, timeout = 8, delay = 3000, height = 600, width = 600)
+    picam = Camera(exp = 8000, timeout = 10000, gain = 10, delay = 3000, height = 1080, width = 1920)
 
-    picam.takePicture("test{}".format(picam.getNumPicsTake()))
+    picam.takePicture("test{num}_{gain}".format(num = picam.getNumPicsTake(), gain = picam.getNumGain()))
+    #picam.takePicture("test6.jpg")
+    
+    
 
 
 
