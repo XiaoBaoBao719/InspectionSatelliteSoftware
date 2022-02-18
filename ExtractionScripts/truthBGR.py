@@ -19,13 +19,13 @@ import cv2
 import numpy as np
 
 
-image_directory = "handrail_calib_1.jpg"            #.# caputred image
+image_directory = "handrail_calib_1.jpg" #.# caputred image
 
 with open("truthBGR_xy_coor.json", 'r') as f:
     pix_xy = json.load(f)
 
 pix_BGR = []
-orig_img = cv2.imread(image_directory)
+orig_img = cv2.imread(image_directory) # creates a numpy array object
 
 pix_xy = np.array(pix_xy, dtype=int)
 pix_xy = np.ndarray.tolist(pix_xy)
