@@ -35,8 +35,9 @@ import Burnwire
 import DriverLED as led
 import Camera as cam
 
-from DetectronPredictor import *
-from YoloPredictor import run
+#from DetectronPredictor import *
+#from YoloPredictor import run
+from 
 
 
 # =====================================
@@ -356,7 +357,7 @@ def writeStateVariable(self, file, state_var, new_val):
 
 def setup(self):
     """ Performs initial bootup sequence once and deploys the payload mechanism
-        Checks status of components by writing to a text doc
+        Checks status of components by writing to a json file
     Parameters
     ----------
     val: 
