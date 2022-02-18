@@ -150,7 +150,7 @@ class Camera():
 if __name__ == "__main__":
     picam = Camera(exp = 8000, timeout = 10000, gain = 10, delay = 3000, height = 1080, width = 1920)
 
-    picam.takePicture("test{num}_gain_{gain}".format(num = picam.getNumPicsTake(), gain = picam.getGainVal()))
+    picam.takePicture("test{num}_gain_{gain}.jpg".format(num = picam.getNumPicsTake(), gain = picam.getGainVal()))
     #picam.takePicture("test6.jpg")
     
     
