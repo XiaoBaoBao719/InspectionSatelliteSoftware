@@ -65,7 +65,6 @@ def Inference_Mask(im, inference_threshold):
 # inference_threshold = 0.02
 # det_dict = Inference_Mask(im, inference_threshold)
 
-
 # ### TABULATED DETECTION RESULTS ###
 # from tabulate import tabulate
 

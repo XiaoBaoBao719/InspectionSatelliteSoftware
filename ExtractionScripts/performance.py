@@ -9,6 +9,7 @@ Last Edited: 2/17/22
 """
 
 import json
+import numpy as np
 
 def BB_IOU(boxA, boxB):
   """https://gist.github.com/meyerjo/dd3533edc97c81258898f60d8978eddc"""
@@ -142,7 +143,8 @@ def Performance(det_dict, viaPolygon, iou_threshold, MAX_TP, MAX_FP, MAX_FP_RGB,
 
   # returns MAX_FP_RGB or FP_exist many FPs for falseposInspect.py
   for detection in range(FP_4_RGB):
-    FP_RGB_record.append(FP_dict[detection])
+    FP_RGB_record.append(np.array([FP_dict[detection]['bbox']],dtype=np.float32))
+
 
   print("TP downlinked: ", TP_record)
   print("FP downlinked: ",FP_record)
@@ -165,6 +167,7 @@ def Performance(det_dict, viaPolygon, iou_threshold, MAX_TP, MAX_FP, MAX_FP_RGB,
     outfile.write(str(outputData))
 
   return FP_RGB_record
+
 
 # ### INPUT VARIABLES FOR TESTING ###
 # # external inputs
