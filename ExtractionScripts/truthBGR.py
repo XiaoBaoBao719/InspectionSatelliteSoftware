@@ -42,5 +42,32 @@ def truthBGR(image_directory):
 
 
 # ### INPUT VARIABLES FOR TESTING ###
-# image_directory = "handrail_calib_1.jpg"            #.# caputred image
-# truthBGR(image_directory)
+image_directory = "handrail_single_real.jpg"            #.# caputred image
+truthBGR(image_directory)
+img_captured = cv2.imread(image_directory)
+h, w, channels = img_captured.shape
+print(h,w)
+
+with open("truthBGR_xy_coor.json", 'r') as f:
+  pix_xy = json.load(f)
+
+pix_xy = np.array(pix_xy, dtype=int)
+pix_xy = np.ndarray.tolist(pix_xy)
+
+print(pix_xy)
+
+img_visual = np.zeros((h,w,3), dtype=np.uint8)
+for [x,y] in pix_xy:
+  B,G,R = img_captured[y, x]
+  img_visual[y,x]=[B, G, R]
+
+img_visual = cv2.rectangle(img_visual, (0,0), (49,49),(255,255,255))
+print(len(pix_xy))
+
+# cv2.imshow("handrail_visual_of_pix_select.jpg", img_visual)
+# cv2.waitKey(0)
+# cv2.destroyAllWindows()
+cv2.imwrite("handrail_DOWNLINK_VISUAL.jpg", img_visual)
+
+
+

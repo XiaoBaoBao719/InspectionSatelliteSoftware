@@ -436,5 +436,6 @@ with open("truthBGR_xy_coor.json", "w") as outfile:
 cv2.imshow("handrail_visual_of_pix_select.jpg", img)             # show interval of interest on edited image
 cv2.waitKey(0)
 cv2.destroyAllWindows()
+print(type(img))
 cv2.imwrite("handrail_visual_of_pix_select.jpg", img)
 
