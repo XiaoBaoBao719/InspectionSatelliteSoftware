@@ -21,7 +21,7 @@ import urllib.parse
 import cv2              # opencv-python             4.5.3.56                 pypi_0    pypi
 import numpy as np      # numpy                     1.21.2           py37h940b05c_0    conda-forge
 
-def extractLB(LB_json_file):
+def extractLB(LB_json_file, VIA_json_file):
     '''convert LabelBox polygon annotation 
     dataset format to VIA polygon annotation 
     dataset format for Mask R-CNN model training'''
@@ -104,10 +104,10 @@ def extractLB(LB_json_file):
 
     
     # writing to sample.json
-    with open("polygonHandrial.json", "w") as outfile:
+    with open(VIA_json_file, "w") as outfile:
         outfile.write(json_object)
 
 # input directory of labelbox json file
-LabelBox_josn_directory = 'labelboxPolygon.json'
-
-extractLB(LabelBox_josn_directory)
+LabelBox_josn_directory = 'labelboxPolygon_single_real.json'
+VIA_json_directory = "viaPolygon_single_real.json"
+extractLB(LabelBox_josn_directory, VIA_json_directory)

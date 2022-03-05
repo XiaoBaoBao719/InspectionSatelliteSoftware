@@ -30,7 +30,7 @@ def Dot2Rect(x,y):
     for visualizing pixel placement in image
     Input: coordinates of interst
     Output: min and max x,y to define rectangle"""
-    d = 4
+    d = 1
     x_min = int(x-d)
     y_min = int(y-d)
     x_max = int(x+d)
@@ -77,8 +77,8 @@ BGR_gray = (220,220,220)
 
 
 ############### CALIBRATION IMPORTS ###############
-LB_json_file = "viaPolygon.json"                 #.# json created from LB2VIA_extract
-image_directory = "handrail_calib_1.jpg"           #.# pre-flight caputred image
+LB_json_file = "viaPolygon_single_real.json"                 #.# json created from LB2VIA_extract
+image_directory = "handrail_single_real.jpg"           #.# pre-flight caputred image
 
 
 ############### CALIBRATION PARAMETERS ###############
@@ -91,42 +91,43 @@ image_directory = "handrail_calib_1.jpg"           #.# pre-flight caputred image
 SHOW_POLYLINES = False
 SHOW_EDGE_PIXELS = True
 # number of pixels
-num_intervals = 50
+num_intervals = 30
 num_pix_per_interval = 5                # at first, set to 1
-pix2pix_dist = 6                        # at first, set to 1
+pix2pix_dist = 10                       # at first, set to 1
+
 
 ###### SURFACE PIXELS ######
-SHOW_ENTIRE_HANDRAIL_BBOX = True
+SHOW_ENTIRE_HANDRAIL_BBOX = False
 
 ### RAIL ###
 # bbox location
-SHOW_RAIL_BBOX = True
+SHOW_RAIL_BBOX = False
 SHOW_RAIL_PIX =True
 c_l_rail, c_r_rail = 0.03, 0.98
 c_t_rail, c_b_rail = 0.0, 0.46
 # number of pixels
-numRow_rail = 3
-numCol_rail = 3
+numRow_rail = 7
+numCol_rail = 7
 
 ### LEFT STANDOFFF ###
 # bbox location
-SHOW_LEFT_STANDOFF_BBOX = True
+SHOW_LEFT_STANDOFF_BBOX = False
 SHOW_LEFT_STANDOFF_PIX =True
 c_l_L, c_r_L = 0.0, 0.175
 c_t_L, c_b_L = 0.45, 1.0
 # number of pixels
-numRowL = 3
-numColL = 3
+numRowL = 7
+numColL = 7
 
 ### RIGHT STANDOFFF ###
 # bbox location
-SHOW_RIGHT_STANDOFF_BBOX = True
+SHOW_RIGHT_STANDOFF_BBOX = False
 SHOW_RIGHT_STANDOFF_PIX =True
 c_l_R, c_r_R = 0.825, 1.0
 c_t_R, c_b_R = 0.45, 1.0
 # number of pixels
-numRowR = 3
-numColR = 3
+numRowR = 7
+numColR = 7
 
 
 ############### OUPUT VARIABLES ###############
@@ -325,7 +326,7 @@ for i in range(len(LOI)):
         elif (temp_var==0):
             temp_color = BGR_purple
         else:
-            temp_color = BGR_gray
+            temp_color = BGR_blue
         if SHOW_EDGE_PIXELS:
             img = cv2.rectangle(img, (x_c_min,y_c_min), (x_c_max,y_c_max), temp_color, -1)
 
@@ -365,7 +366,7 @@ pix_xy_surface_rail = Matrix2List(xCoorRail,yCoorRail)
 for i in range(len(pix_xy_surface_rail)):
     x_c_min,y_c_min,x_c_max,y_c_max = Dot2Rect(pix_xy_surface_rail[i][0],pix_xy_surface_rail[i][1])
     if SHOW_RAIL_PIX:
-            img = cv2.rectangle(img, (x_c_min,y_c_min), (x_c_max,y_c_max), BGR_green, -1)
+            img = cv2.rectangle(img, (x_c_min,y_c_min), (x_c_max,y_c_max), BGR_red, -1)
 
 
 # LEFT STANDOFF BBOX
@@ -385,7 +386,7 @@ pix_xy_surface_L = Matrix2List(xCoor_stanL,yCoor_stanL)
 for i in range(len(pix_xy_surface_L)):
     x_c_min,y_c_min,x_c_max,y_c_max = Dot2Rect(pix_xy_surface_L[i][0],pix_xy_surface_L[i][1])
     if SHOW_LEFT_STANDOFF_PIX:
-            img = cv2.rectangle(img, (x_c_min,y_c_min), (x_c_max,y_c_max), BGR_green, -1)
+            img = cv2.rectangle(img, (x_c_min,y_c_min), (x_c_max,y_c_max), BGR_red, -1)
 
 
 # RIGHT STANDOFF BBOX
@@ -405,7 +406,7 @@ pix_xy_surface_R = Matrix2List(xCoor_stanR,yCoor_stanR)
 for i in range(len(pix_xy_surface_R)):
     x_c_min,y_c_min,x_c_max,y_c_max = Dot2Rect(pix_xy_surface_R[i][0],pix_xy_surface_R[i][1])
     if SHOW_RIGHT_STANDOFF_PIX:
-            img = cv2.rectangle(img, (x_c_min,y_c_min), (x_c_max,y_c_max), BGR_green, -1)
+            img = cv2.rectangle(img, (x_c_min,y_c_min), (x_c_max,y_c_max), BGR_red, -1)
 
 pix_xy_surface = AppendElements(pix_xy_surface,pix_xy_surface_rail)
 pix_xy_surface = AppendElements(pix_xy_surface,pix_xy_surface_L)
@@ -432,9 +433,8 @@ with open("truthBGR_xy_coor.json", "w") as outfile:
     outfile.write(str(pix_xy))
 
 
-
-cv2.imshow("handrail.jpg", img)             # show interval of interest on edited image
+cv2.imshow("handrail_visual_of_pix_select.jpg", img)             # show interval of interest on edited image
 cv2.waitKey(0)
 cv2.destroyAllWindows()
-cv2.imwrite("handrail.jpg", img)
+cv2.imwrite("handrail_visual_of_pix_select.jpg", img)
 
