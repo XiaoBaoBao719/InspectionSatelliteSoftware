@@ -42,6 +42,20 @@ def truthBGR(image_directory):
 
 
 # ### INPUT VARIABLES FOR TESTING ###
+def Dot2Rect(x,y):  
+    """
+    Find pixel points around a coordinate of interest 
+    for visualizing pixel placement in image
+    Input: coordinates of interst
+    Output: min and max x,y to define rectangle"""
+    d = 5
+    x_min = int(x-d)
+    y_min = int(y-d)
+    x_max = int(x+d)
+    y_max = int(y+d)
+
+    return x_min, y_min,x_max,y_max
+
 image_directory = "handrail_single_real.jpg"            #.# caputred image
 truthBGR(image_directory)
 img_captured = cv2.imread(image_directory)
@@ -59,7 +73,13 @@ print(pix_xy)
 img_visual = np.zeros((h,w,3), dtype=np.uint8)
 for [x,y] in pix_xy:
   B,G,R = img_captured[y, x]
+  color = (B,G,R)
   img_visual[y,x]=[B, G, R]
+
+  x_c_min,y_c_min,x_c_max,y_c_max = Dot2Rect(x,y)
+  print(B,G,R)
+  print(type(int(B)))
+  img_visual = cv2.rectangle(img_visual, (x_c_min,y_c_min),(x_c_max,y_c_max), (int(B),int(G),int(R)),-1)
 
 print(len(pix_xy))
 

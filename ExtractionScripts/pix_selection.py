@@ -91,7 +91,7 @@ image_directory = "handrail_single_real.jpg"           #.# pre-flight caputred i
 SHOW_POLYLINES = False
 SHOW_EDGE_PIXELS = True
 # number of pixels
-num_intervals = 30
+num_intervals = 0
 num_pix_per_interval = 5                # at first, set to 1
 pix2pix_dist = 10                       # at first, set to 1
 
@@ -103,17 +103,17 @@ SHOW_ENTIRE_HANDRAIL_BBOX = False
 # bbox location
 SHOW_RAIL_BBOX = False
 SHOW_RAIL_PIX =True
-c_l_rail, c_r_rail = 0.03, 0.98
-c_t_rail, c_b_rail = 0.0, 0.46
+c_l_rail, c_r_rail = -0.07, 1.06
+c_t_rail, c_b_rail = 0.02, 0.47
 # number of pixels
-numRow_rail = 7
-numCol_rail = 7
+numRow_rail = 5
+numCol_rail = 10
 
 ### LEFT STANDOFFF ###
 # bbox location
 SHOW_LEFT_STANDOFF_BBOX = False
 SHOW_LEFT_STANDOFF_PIX =True
-c_l_L, c_r_L = 0.0, 0.175
+c_l_L, c_r_L = -0.025, 0.2
 c_t_L, c_b_L = 0.45, 1.0
 # number of pixels
 numRowL = 7
@@ -123,7 +123,7 @@ numColL = 7
 # bbox location
 SHOW_RIGHT_STANDOFF_BBOX = False
 SHOW_RIGHT_STANDOFF_PIX =True
-c_l_R, c_r_R = 0.825, 1.0
+c_l_R, c_r_R = 0.78, 1.01
 c_t_R, c_b_R = 0.45, 1.0
 # number of pixels
 numRowR = 7
@@ -433,9 +433,8 @@ with open("truthBGR_xy_coor.json", "w") as outfile:
     outfile.write(str(pix_xy))
 
 
-cv2.imshow("handrail_visual_of_pix_select.jpg", img)             # show interval of interest on edited image
-cv2.waitKey(0)
-cv2.destroyAllWindows()
-print(type(img))
+# cv2.imshow("handrail_visual_of_pix_select.jpg", img)             # show interval of interest on edited image
+# cv2.waitKey(0)
+# cv2.destroyAllWindows()
 cv2.imwrite("handrail_visual_of_pix_select.jpg", img)
 
