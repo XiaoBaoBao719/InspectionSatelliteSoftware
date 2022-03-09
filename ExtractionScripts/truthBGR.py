@@ -59,7 +59,14 @@ def Dot2Rect(x,y):
 image_directory = "handrail_single_real.jpg"            #.# caputred image
 truthBGR(image_directory)
 img_captured = cv2.imread(image_directory)
-h, w, channels = img_captured.shape
+DATA_GRAYSCALE = True
+
+
+if DATA_GRAYSCALE:
+  img_captured = cv2.cvtColor(img_captured, cv2.COLOR_BGR2GRAY)
+  h, w = img_captured.shape
+else:
+  h, w, channels = img_captured.shape
 print(h,w)
 
 with open("truthBGR_xy_coor.json", 'r') as f:
@@ -72,16 +79,28 @@ print(pix_xy)
 
 img_visual = np.zeros((h,w,3), dtype=np.uint8)
 for [x,y] in pix_xy:
-  B,G,R = img_captured[y, x]
-  color = (B,G,R)
-  img_visual[y,x]=[B, G, R]
+  if DATA_GRAYSCALE:
+    G = img_captured[y, x]
+    color = (G)
+    img_visual[y,x]= [G]
+    print(G)
+  else:
+    B,G,R = img_captured[y, x]
+    color = (B,G,R)
+    img_visual[y,x]=[B, G, R]
+    print(B,G,R)
 
   x_c_min,y_c_min,x_c_max,y_c_max = Dot2Rect(x,y)
-  print(B,G,R)
-  print(type(int(B)))
-  img_visual = cv2.rectangle(img_visual, (x_c_min,y_c_min),(x_c_max,y_c_max), (int(B),int(G),int(R)),-1)
+  
+  if DATA_GRAYSCALE:
+    img_visual = cv2.rectangle(img_visual, (x_c_min,y_c_min),(x_c_max,y_c_max), (int(G),int(G),int(G)),-1)
+  else:
+    img_visual = cv2.rectangle(img_visual, (x_c_min,y_c_min),(x_c_max,y_c_max), (int(B),int(G),int(R)),-1)
 
 print(len(pix_xy))
+
+# if DATA_GRAYSCALE:
+#   img_visual = cv2.cvtColor(img_visual, cv2.COLOR_BGR2GRAY)
 
 # cv2.imshow("handrail_visual_of_pix_select.jpg", img_visual)
 # cv2.waitKey(0)
