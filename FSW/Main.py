@@ -16,8 +16,10 @@ Primary functions include:
 # ==         CONFIGURATION           ==
 # =====================================
 
+import os
 from os import *
 from time import time
+import sys
 from loguru import RotationFunction, logger
 from pathlib import Path, WindowsPath5
 
@@ -31,13 +33,16 @@ import json
 
 from serial.serialutil import SerialException
 
-import Burnwire
-import DriverLED as led
-import Camera as cam
+from Burnwire import Burnwire
+from DriverLED import DriverLED
+from Camera import Camera
 
+sys.path.insert(0, os.getcwd() + '/FSW')
+
+import Timer
 #from DetectronPredictor import *
 #from YoloPredictor import run
-from 
+
 
 
 # =====================================
@@ -109,7 +114,7 @@ def checkDeployed():
     ---------
     boolean output based on if deploy criterion met
     """
-    val = GPIO.input(PHOTODIODE_PIN)
+    val = GPIO.input(PD_POS)
     if val < LUMINOSITY_THRESHOLD:
         return False
     else:
@@ -383,26 +388,6 @@ def setup(self):
     # Write the new number of boots to the state variables
     writeStateVariable(state_variables_path, "BOOT_COUNTER", current_num_boots)
 
-    # try-catch guarentees that the file is properly closed even when an exception is raised
-    # that could prevent us from closing the file
-    # try:
-    #     self.init_file = open(parameterDB_path_name,mode='w',encoding='utf-8')
-    #     # Increment Boot Counter
-    #     # Search file for 'bootCounter'
-    #     while(True):
-    #         current_line = self.init_file.readline()
-    #         if 'bootCounter' in current_line:
-    #             print(self.init_file.tell())
-    #             counter = int(filter(str.isdigit, current_line))
-    #             counter += 1
-    #             self.init_file.seek(-3, self.init_file.tell())
-    #             self.init_file.write(str(counter))
-    #             break
-    #         elif current_line is '':
-    #             break
-    # finally:
-    #     self.init_file.close()
-    # Check the deploy flag on init file
 
     read_out = readStateVariable(state_variables_path, "DEPLOYED") # Check for the state variable for DEPLOYED
 
@@ -411,26 +396,6 @@ def setup(self):
     except TypeError as e:
         print("ISSUE WITH READING THE STATE VARIABLE: DEPLOYED")
         print(e)
-    
-    # try:
-    #     self.init_file = open(parameterrun
-
-    #         current_line = self.init_file.readline()
-    #         if 'deployedFlag' in current_line:
-    #             if 'False' in current_line:
-    #                 print(self.init_file.tell())
-    #                 print("Deployed Flag is False")
-    #                 self.deployed = False
-    #                 break
-    #             elif 'True' in current_line:
-    #                 print(self.init_file.tell())
-    #                 print("Deployed Flag is True")
-    #                 self.deployed = True
-    #                 break
-    #         elif current_line is '':
-    #             break
-    # finally:
-    #     self.init_file.close()
     
     # If deployed is FALSE, create a Burnwire() object and invoke the burn function
     # Runs .burn() for both pins at 5000 Hz for 1 second
@@ -447,29 +412,6 @@ def setup(self):
     elif deployed is True:
         # Move on to Define and Initialize Systems
         pass
-
-
-        # try:
-        #     self.init_file = open(parameterDB_path_name,mode='w',encoding='utf-8')
-        #     # Search file for 'deployedFlag'
-        #     while(True):
-        #         current_line = self.init_file.readline()
-        #         if 'burnwireFired' in current_line:
-        #             if 'False' in current_line:
-        #                 print(self.init_file.tell())
-        #                 print("Burnwire Flag was False") #TODO: Need a better way of doing this
-        #                 self.init_file.write(str.replace('False','True'))
-        #                 self.burnwireFired = True
-        #                 break
-        #             elif 'True' in current_line:
-        #                 print(self.init_file.tell())
-        #                 print("Burnwire Flag was True")
-        #                 self.deployed = True
-        #                 break
-        #         elif current_line is '':
-        #             break
-        # finally:
-        #  self.init_file.close()
 
     # Loop to check the Photodiode. Should this run as a parallel process?
 
