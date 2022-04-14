@@ -96,10 +96,12 @@ deployed = False
 burnwireFired = False
 
 
-def startTimer():
+def startTimer(timer):
     """ TODO: initializes the global timer var as a seperate thread process
     """
-    pass
+    timer.start()
+
+
 
 def checkDeployed():
     """ Determines if the payload mechanism has been triggered and deployed by
