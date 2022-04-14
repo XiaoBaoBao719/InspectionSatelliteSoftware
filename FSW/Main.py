@@ -55,7 +55,7 @@ PD_POS = 9 # Photodiode GPIO20
 #LED_PIN = 14
 #BURNWIRE_PINS = (BURN_PIN_1, BURN_PIN_2)
 BURNWIRE_WAIT_TIME = 20 # mins
-LUMINOSITY_THRESHOLD = 1
+PHOTODIODE_THRESH = 1 # We need to test photodiode to find a good value for this
 
 # =====================================
 # ==       COMMS GLOBAL VARS         ==
@@ -101,6 +101,31 @@ def startTimer(timer):
     """
     timer.start()
 
+def clamp(n, minn, maxn):
+    if n < minn:
+        return minn
+    elif n > maxn:
+        return maxn
+    else:
+        return n
+
+# TODO Write function that checks the photodiode, return True if above brightness
+# threshold, return False otherwise
+
+def checkPhotodiode(val):
+    """
+    Parameters
+    ----------
+    val : float 
+        Value provided by GPIO pin attached to photodiode
+    """
+    if val is not type(float):
+        if val > 1024 or val < 0:
+            val = clamp(val, 0, 1024)
+
+        if val > PHOTODIODE_THRESH:
+            return True
+    return False
 
 
 def checkDeployed():
@@ -117,7 +142,7 @@ def checkDeployed():
     boolean output based on if deploy criterion met
     """
     val = GPIO.input(PD_POS)
-    if val < LUMINOSITY_THRESHOLD:
+    if checkPhotodiode(val):
         return False
     else:
         return True
@@ -130,14 +155,6 @@ def initializeComputer():
     GPIO.setwarnings(False)
     #GPIO.setup(LED_PIN, GPIO.OUT)
     startTimer()
-
-def camLightOn():
-    GPIO.output(LED_PIN, GPIO.HIGH)
-    pass
-
-def camLightOff():
-    GPIO.output(LED_PIN, GPIO.LOW)
-    pass
 
 def serialSetup():
     """ 
@@ -402,6 +419,7 @@ def setup(self):
     # If deployed is FALSE, create a Burnwire() object and invoke the burn function
     # Runs .burn() for both pins at 5000 Hz for 1 second
 
+    # TODO: Check if the Burnwire object exists. Only want to create a single Burnwire object once!
     if deployed is False and deployed is not None:
         #burnwire_1 = Burnwire(1, 5000, 0)
         burnwire = Burnwire(2, 5000, 0)

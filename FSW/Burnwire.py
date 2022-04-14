@@ -62,8 +62,9 @@ class Burnwire:
             trigger the release mechanism
         Parameters
         ----------
-        val: float
-            Contains the digital photodiode readings
+        burn_num: int
+            Toggles which burnwire to fire
+        
         Returns
         ---------
         Returns True if GPIO pins specified were correctly set to desired values
