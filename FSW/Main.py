@@ -11,6 +11,10 @@ Primary functions include:
 1. Payload deployment
 2. Invoking model inference results
 3. Serial data packet comm to the S/C FC
+
+Req: 
+Python 3.8.10
+pySerial
 """
 # =====================================
 # ==         CONFIGURATION           ==
@@ -38,6 +42,8 @@ from DriverLED import DriverLED
 from Camera import Camera
 
 sys.path.insert(0, os.getcwd() + '/FSW')
+sys.path.insert(0, os.getcwd() + '/Detectron2')
+sys.path.insert(0, os.getcwd() + 'YOLOv5')
 
 import Timer
 #from DetectronPredictor import *
@@ -48,7 +54,7 @@ import Timer
 # =====================================
 # ==         DEPLOYMENT VARS         ==
 # =====================================
-PD_POS = 9 # Photodiode GPIO20
+PHOTODIODE_PIN = 9 # Photodiode GPIO20
 #INPUT_PIN = 10
 #BURN_PIN_1 = 11
 #BURN_PIN_2 = 12
@@ -61,7 +67,7 @@ PHOTODIODE_THRESH = 1 # We need to test photodiode to find a good value for this
 # ==       COMMS GLOBAL VARS         ==
 # =====================================
 BAUDRATE = 9600
-SYS_TIMEOUT = 5
+SYS_TIMEOUT = 5 # seconds
 mini_UART = '/dev/ttyS0'
 PL011 = '/dev/ttyAMA0'
 SERIAL_PORT = PL011
@@ -102,6 +108,8 @@ def startTimer(timer):
     timer.start()
 
 def clamp(n, minn, maxn):
+    """ Helper function
+    """
     if n < minn:
         return minn
     elif n > maxn:
@@ -112,40 +120,54 @@ def clamp(n, minn, maxn):
 # TODO Write function that checks the photodiode, return True if above brightness
 # threshold, return False otherwise
 
-def checkPhotodiode(val):
+def checkPhotodiode(GPIO_PIN):
     """
     Parameters
     ----------
-    val : float 
-        Value provided by GPIO pin attached to photodiode
-    """
-    if val is not type(float):
-        if val > 1024 or val < 0:
-            val = clamp(val, 0, 1024)
+    GPIO_PIN : const int 
+        GPIO pin attached to photodiode
+    photodiode_reading : float 
+        voltage reading from GPIO photodiode pin
 
-        if val > PHOTODIODE_THRESH:
+    TODO: Determine the maximum photodiode value and change 1024 to constant value
+    """
+    photodiode_reading = GPIO.input(GPIO_PIN)
+
+    if photodiode_reading is None:
+        try:
+            raise Exception('Photodiode I/O')
+        except Exception as inst: # Get the exception instance
+            print(inst.args, "\n \n")
+            print("\nAttempted to access photodiode pin but no value?")
+            print("\n Check if photodiode connected to correct pin?")
+        return False
+
+    if photodiode_reading is not type(float):
+        if photodiode_reading > 1024 or photodiode_reading < 0:
+            photodiode_reading = clamp(photodiode_reading, 0, 1024)
+
+        if photodiode_reading > PHOTODIODE_THRESH:
             return True
     return False
 
 
-def checkDeployed():
-    """ Determines if the payload mechanism has been triggered and deployed by
-        comparing ambient light to some static threshold value
+# def checkDeployed():
+#     """ Determines if the payload mechanism has been triggered and deployed by
+#         comparing ambient light to some static threshold value
         
-    Parameters
-    ----------
-    val: float
-        Contains the digital photodiode readings
+#     Parameters
+#     ----------
+#     val: float
+#         Contains the digital photodiode readings
     
-    Returns
-    ---------
-    boolean output based on if deploy criterion met
-    """
-    val = GPIO.input(PD_POS)
-    if checkPhotodiode(val):
-        return False
-    else:
-        return True
+#     Returns
+#     ---------
+#     boolean output based on if deploy criterion met
+#     """
+#     if checkPhotodiode(PHOTODIODE_PIN):
+#         return False
+#     else:
+#         return True
 
 def initializeComputer():
     """ Setup calls to RPi.GPIO to initialize pin numbers to board specs and starts
@@ -226,16 +248,15 @@ def checkTempCPU():
     else:
         return True
 
+def checkVoltage():
+    result = system('vcgencmd measure_volts core')
+    print("Current voltage running in: core", result)
+    return result
+
 def reboot():
     """ Shell command to restart the RPi
     """
     system('sudo restart')
-
-# DEPRECATED FUNCTION: 
-# def takePicture(exposureTime, delay, width, height):
-#     """TODO: Perform cam connection check, lighting check"""
-#     system('libcamera-jpeg -o handrail-input.jpg -t 5000 --width 800 --height 600')
-#     pass
 
 def runInference(model, source):
     """ Calls CV models one after another, ensuring that light and dark lighting
@@ -254,16 +275,16 @@ def runInference(model, source):
     resultsDF: string
         Filepath to dataframe of output results
     """
-    camLightOn()
-    detectron_results_lit = DetectronPredictor.detect(source)
-    yolo_results_lit = YoloPredictor.detect(source)
 
-    camLightOff()
-    detectron_results_dark = DetectronPredictor.detect(source)
-    yolo_results_dark = YoloPredictor.detect(source)
+    # detectron_results_lit = DetectronPredictor.detect(source)
+    # yolo_results_lit = YoloPredictor.detect(source)
 
-    return [{'Light': (detectron_results_lit, yolo_results_lit)} ,
-            {'Dark':(detectron_results_dark, yolo_results_dark)}]
+
+    # detectron_results_dark = DetectronPredictor.detect(source)
+    # yolo_results_dark = YoloPredictor.detect(source)
+
+    # return [{'Light': (detectron_results_lit, yolo_results_lit)} ,
+    #         {'Dark':(detectron_results_dark, yolo_results_dark)}]
     
 def writePayloadData(results, ser):
     """ Takes CV inference results from the model and writes the data to the S/C FC
@@ -421,54 +442,83 @@ def setup(self):
 
     # TODO: Check if the Burnwire object exists. Only want to create a single Burnwire object once!
     if deployed is False and deployed is not None:
-        #burnwire_1 = Burnwire(1, 5000, 0)
+        # Trigger Burnwire
         burnwire = Burnwire(2, 5000, 0)
-        #burnwire_1.getBurnwireStatus()
+
         burnwire.getBurnwireStatus()
         burnwire.burn(1, 100, 5000, 1) # Start pin 1 burn routine
         burnwire.burn(2, 100, 5000, 1) # Start pin 2 burn routine
         burnwire.destroy()
+
         writeStateVariable(state_variables_path, "BURNWIRE_FIRED", True) # Sets State Variable for burnwire fire event to TRUE
     elif deployed is True:
         # Move on to Define and Initialize Systems
+        # TODO DEFINE AND INITIALIZE SYSTEMS
         pass
 
     # Loop to check the Photodiode. Should this run as a parallel process?
+    photodiode_state = checkPhotodiode(PHOTODIODE_PIN)
 
+    # Get the number of dark readings so far
+    number_dark_readings = readStateVariable(state_variables_path, 
+                                                    "NUMBER_DARK_READINGS")
     # While the Photodiode is "dark" and DEPLOYED is FALSE
+    while photodiode_state is not True and deployed is False:
         # Increment NUMBER_DARK_READINGS++
-
+        number_dark_readings += 1
+        writeStateVariable(state_variables_path, "NUMBER_DARK_READINGS", number_dark_readings)
         # If NUMBER_DARK_READINGS > 10
-
+        if (number_dark_readings % 10) == 0 :
             # Run the Burnwire again
+            # Trigger Burnwire
+            burnwire = Burnwire(2, 5000, 0)
 
+            burnwire.getBurnwireStatus()
+            burnwire.burn(1, 100, 5000, 1) # Start pin 1 burn routine
+            burnwire.burn(2, 100, 5000, 1) # Start pin 2 burn routine
+            burnwire.destroy()
             # Reset NUMMBER_DARK_READINGS = 0
-
+            # number_dark_readings = 0
             # Sleep 5 minutes
+            time.sleep(50000)
         
     # Set DEPLOYED to TRUE
-                
+    writeStateVariable(state_variables_path, "DEPLOYED", True)
+
     if not verifySystem():
         reboot()
-
     pass
-
-
-def main():
-    """ Main loop
-    """
-    setup()
-
-    print(timer)
-
-    while timer % timeInterval != 0:
-        """ Performs an inference every six minutes """
-        imgPath = takePicture(EXPOSURE_TIME, DELAY, WIDTH, HEIGHT)
-        results = performInference(imgPath)
-        writePayloadData(results)
-        #TODO: must be able to read from Rx and implement parity bit outcome
-        pass
-    ser.__exit__()    
+  
 
 if __name__ == "__main__":
-    main()
+    
+    # Run the system setup function after 5 seconds
+    timer = Timer(5.0, setup)
+
+    # Initialize the timer
+    timer.start()
+    # Read the temperature?
+    cpu_check = checkTempCPU()
+    # Read the battery voltage?
+    checkVoltage()
+    # Check serial communication is good
+
+    system_check = (cpu_check or serial.is_open)
+    # Send health data packet to primary flight computer for check
+    writeStateVariable(state_variables_path, "HARDWARE_ERROR", system_check)
+
+    # Main Science FSW 
+    while True:
+        # if the elapsed time on the timer thread is a multiple of the timer interval 
+        # threshold, perform data aquisition
+
+        # Push results of data aquisition to a local folder and return the path
+
+        # Perform model inference on the returned path from the model
+        """ Performs an inference every 10 minutes """
+        imgPath = takePicture(EXPOSURE_TIME, DELAY, WIDTH, HEIGHT)
+        results = performInference(imgPath)
+        # writePayloadData(results)
+        #TODO: must be able to read from Rx and implement parity bit outcome
+        pass
+    ser.__exit__()
