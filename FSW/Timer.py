@@ -16,6 +16,9 @@ class Timer:
 
         self.start_time = time.perf_counter()
 
+    def elapsed_time(self):
+        return time.perf_counter() - self.start_time
+
     def stop(self): 
         """Cease the timer and report how much time has elapssed"""
         if self.start_time is None:

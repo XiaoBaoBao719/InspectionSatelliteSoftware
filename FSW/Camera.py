@@ -11,8 +11,6 @@ import threading
 # ==         GLOBAL VARS         ==
 # =====================================
 
-out_path = "\home\pi\InspectionSatCV\FSW" # file path to the directory that will store the image from camera
-
 class Camera():
     """ Camera Class implements functionality in order to support Arducam by using the libcamera library.
         It is currently hardcoded in order to interact with a Linux-based operating system that supports
@@ -47,6 +45,7 @@ class Camera():
         width : int
             Describes the image width.
     """
+    path = "\home\pi\InspectionSatCV\FSW" # file path to the directory that will store the image from camera
     exposure_time = 0
     delay = 0
     shutter_speed = 0
@@ -80,7 +79,7 @@ class Camera():
         self.encoding = 'jpg'
         self.mode = 'libcamera-still '
         self.preview_mode = ' --nopreview ' # used only for debugging
-        self.outpath = out_path
+        self.path = "\home\pi\InspectionSatCV\FSW"
         self.output = ""
         self.out_encoding = ""
         self.height = ""
@@ -115,7 +114,7 @@ class Camera():
         """
         print("Taking a picture!")
 
-        self.output = "".join('-o ' + self.outpath + '\\' + file_name + ' ')
+        self.output = "".join('-o ' + self.path + '\\' + file_name + ' ')
         self.out_encoding = "".join(' -e ' + self.encoding)
         self.timeout = "".join('-t ' + str(self.timeout))
         self.height = "".join(' --height ' +  str(self.pxl_height) + ' ')
@@ -128,13 +127,13 @@ class Camera():
             system(self.config)
         except Exception:
             print("Failed to take picture due to raised exception: ", system.exec_info()[2])
-            return False
+            return (False, self.path+'\\'+file_name)
         #system('libcamera-jpeg -o handrail-input.jpg -t 5000 --width 800 --height 600')
         self.num_pics_taken += 1
         
         
         print(self.config)
-        return True
+        return (True, self.path+'\\'+file_name)
 
     def getNumPicsTake(self):
         """ Returns the number of images successfully captured by the Camera object.
@@ -145,6 +144,9 @@ class Camera():
         """ Returns the number of images successfully captured by the Camera object.
         """
         return self.gain_value
+    
+    def getCapturePath(self):
+        return self.path
 
 # For debugging purposes only
 if __name__ == "__main__":

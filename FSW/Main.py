@@ -24,8 +24,8 @@ import os
 from os import *
 from time import time
 import sys
-from loguru import RotationFunction, logger
-from pathlib import Path, WindowsPath5
+# from loguru import RotationFunction, logger
+# from pathlib import Path, WindowsPath5
 
 import numpy as np
 import math
@@ -34,6 +34,8 @@ import RPi.GPIO as GPIO
 import serial
 import threading
 import json
+import cv2 as cv
+from PIL import Image
 
 from serial.serialutil import SerialException
 
@@ -46,7 +48,8 @@ sys.path.insert(0, os.getcwd() + '/Detectron2')
 sys.path.insert(0, os.getcwd() + 'YOLOv5')
 
 import Timer
-#from DetectronPredictor import *
+from Camera import *
+from DetectronPredictor import *
 #from YoloPredictor import run
 
 
@@ -84,16 +87,21 @@ Detectron2_SOURCE = ROOT / 'data/images'
 YOLO_WEIGHTS = ROOT / 'yolov5s.pt'
 YOLO_SOURCE = ROOT / 'data/images'
 
-EXPOSURE_TIME = 1 # ms
-DELAY = 1 # ms
+EXPOSURE_TIME = 8000 # ms
+DELAY = 3000 # ms
+GAIN = 10
+TIMEOUT = 10000
 WIDTH = 800 # px
 HEIGHT = 600 # px
+
+PiCamera = None
 
 # =====================================
 # ==        MISC GLOBAL VARS         ==
 # =====================================
 SCIENCE = False
 MAX_TEMP = 85 # measured in degrees C (see datasheet -20C - +85C)
+INTERVAL_LENGTH = 10000 # 10 minutes - time between image captures
 current_time = 0
 parameterDB_path_name = '\home\pi\Desktop\ParameterDB'
 state_variables_path = '\home\pi\Desktop\STATE_VARIABLES.json'
@@ -455,32 +463,36 @@ def setup(self):
         # Move on to Define and Initialize Systems
         # TODO DEFINE AND INITIALIZE SYSTEMS
         pass
+    
+    # INITIALIZE PAYLOAD CAMERA 
+    PiCamera = Camera(exp=EXPOSURE_TIME, timeout=TIMEOUT, gain=GAIN, 
+                        delay=DELAY, height=HEIGHT, width=WIDTH)
 
-    # Loop to check the Photodiode. Should this run as a parallel process?
-    photodiode_state = checkPhotodiode(PHOTODIODE_PIN)
+    # # Loop to check the Photodiode. Should this run as a parallel process?
+    # photodiode_state = checkPhotodiode(PHOTODIODE_PIN)
 
-    # Get the number of dark readings so far
-    number_dark_readings = readStateVariable(state_variables_path, 
-                                                    "NUMBER_DARK_READINGS")
-    # While the Photodiode is "dark" and DEPLOYED is FALSE
-    while photodiode_state is not True and deployed is False:
-        # Increment NUMBER_DARK_READINGS++
-        number_dark_readings += 1
-        writeStateVariable(state_variables_path, "NUMBER_DARK_READINGS", number_dark_readings)
-        # If NUMBER_DARK_READINGS > 10
-        if (number_dark_readings % 10) == 0 :
-            # Run the Burnwire again
-            # Trigger Burnwire
-            burnwire = Burnwire(2, 5000, 0)
+    # # Get the number of dark readings so far
+    # number_dark_readings = readStateVariable(state_variables_path, 
+    #                                                 "NUMBER_DARK_READINGS")
+    # # While the Photodiode is "dark" and DEPLOYED is FALSE
+    # while photodiode_state is not True and deployed is False:
+    #     # Increment NUMBER_DARK_READINGS++
+    #     number_dark_readings += 1
+    #     writeStateVariable(state_variables_path, "NUMBER_DARK_READINGS", number_dark_readings)
+    #     # If NUMBER_DARK_READINGS > 10
+    #     if (number_dark_readings % 10) == 0 :
+    #         # Run the Burnwire again
+    #         # Trigger Burnwire
+    #         burnwire = Burnwire(2, 5000, 0)
 
-            burnwire.getBurnwireStatus()
-            burnwire.burn(1, 100, 5000, 1) # Start pin 1 burn routine
-            burnwire.burn(2, 100, 5000, 1) # Start pin 2 burn routine
-            burnwire.destroy()
-            # Reset NUMMBER_DARK_READINGS = 0
-            # number_dark_readings = 0
-            # Sleep 5 minutes
-            time.sleep(50000)
+    #         burnwire.getBurnwireStatus()
+    #         burnwire.burn(1, 100, 5000, 1) # Start pin 1 burn routine
+    #         burnwire.burn(2, 100, 5000, 1) # Start pin 2 burn routine
+    #         burnwire.destroy()
+    #         # Reset NUMMBER_DARK_READINGS = 0
+    #         # number_dark_readings = 0
+    #         # Sleep 5 minutes
+    #         time.sleep(50000)
         
     # Set DEPLOYED to TRUE
     writeStateVariable(state_variables_path, "DEPLOYED", True)
@@ -507,18 +519,39 @@ if __name__ == "__main__":
     # Send health data packet to primary flight computer for check
     writeStateVariable(state_variables_path, "HARDWARE_ERROR", system_check)
 
+    image_path = picam.getCapturePath()
+
     # Main Science FSW 
     while True:
         # if the elapsed time on the timer thread is a multiple of the timer interval 
         # threshold, perform data aquisition
+        elapsed_time = math.ceil(timer.elapsed_time() % INTERVAL_LENGTH)
 
-        # Push results of data aquisition to a local folder and return the path
+        if (elapsed_time == 0):
+            # Take a picture
+            img_capture = picam.takePicture("test{num}_gain_{gain}.jpg".format(num = picam.getNumPicsTake(), 
+                                                                gain = picam.getGainVal()))
+            # Push results of data aquisition to a local folder and return the path
+            if img_capture[0]:
+                image_path = img_capture[1]
+                # Debugging: show the image
+                cv.imshow(image_path)
+                cv.waitKey(0)
+                cv.destroyAllWindows()
 
-        # Perform model inference on the returned path from the model
-        """ Performs an inference every 10 minutes """
-        imgPath = takePicture(EXPOSURE_TIME, DELAY, WIDTH, HEIGHT)
-        results = performInference(imgPath)
-        # writePayloadData(results)
-        #TODO: must be able to read from Rx and implement parity bit outcome
-        pass
+                DetectronPredictor.detect(image_path)
+            elif img_capture[1]:
+                print(" IMAGE NOT CAPTURED! Trying again...")
+                continue
+            # Perform model inference on the returned path from the model
+
+            
+            # results = performInference(imgPath)
+
+
+            # writePayloadData(results)
+
+
+            #TODO: must be able to read from Rx and implement parity bit outcome
+            pass
     ser.__exit__()
