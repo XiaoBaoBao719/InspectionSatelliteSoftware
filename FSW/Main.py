@@ -53,7 +53,6 @@ from DetectronPredictor import *
 #from YoloPredictor import run
 
 
-
 # =====================================
 # ==         DEPLOYMENT VARS         ==
 # =====================================
@@ -128,35 +127,35 @@ def clamp(n, minn, maxn):
 # TODO Write function that checks the photodiode, return True if above brightness
 # threshold, return False otherwise
 
-def checkPhotodiode(GPIO_PIN):
-    """
-    Parameters
-    ----------
-    GPIO_PIN : const int 
-        GPIO pin attached to photodiode
-    photodiode_reading : float 
-        voltage reading from GPIO photodiode pin
+# def checkPhotodiode(GPIO_PIN):
+#     """
+#     Parameters
+#     ----------
+#     GPIO_PIN : const int 
+#         GPIO pin attached to photodiode
+#     photodiode_reading : float 
+#         voltage reading from GPIO photodiode pin
 
-    TODO: Determine the maximum photodiode value and change 1024 to constant value
-    """
-    photodiode_reading = GPIO.input(GPIO_PIN)
+#     TODO: Determine the maximum photodiode value and change 1024 to constant value
+#     """
+#     photodiode_reading = GPIO.input(GPIO_PIN)
 
-    if photodiode_reading is None:
-        try:
-            raise Exception('Photodiode I/O')
-        except Exception as inst: # Get the exception instance
-            print(inst.args, "\n \n")
-            print("\nAttempted to access photodiode pin but no value?")
-            print("\n Check if photodiode connected to correct pin?")
-        return False
+#     if photodiode_reading is None:
+#         try:
+#             raise Exception('Photodiode I/O')
+#         except Exception as inst: # Get the exception instance
+#             print(inst.args, "\n \n")
+#             print("\nAttempted to access photodiode pin but no value?")
+#             print("\n Check if photodiode connected to correct pin?")
+#         return False
 
-    if photodiode_reading is not type(float):
-        if photodiode_reading > 1024 or photodiode_reading < 0:
-            photodiode_reading = clamp(photodiode_reading, 0, 1024)
+#     if photodiode_reading is not type(float):
+#         if photodiode_reading > 1024 or photodiode_reading < 0:
+#             photodiode_reading = clamp(photodiode_reading, 0, 1024)
 
-        if photodiode_reading > PHOTODIODE_THRESH:
-            return True
-    return False
+#         if photodiode_reading > PHOTODIODE_THRESH:
+#             return True
+#     return False
 
 
 # def checkDeployed():
@@ -266,7 +265,7 @@ def reboot():
     """
     system('sudo restart')
 
-def runInference(model, source):
+def getInference(model, source):
     """ Calls CV models one after another, ensuring that light and dark lighting
         conditons are also created for each CV model
     TODO: Need to determine fault handling for if a model fails to perform successful inference
