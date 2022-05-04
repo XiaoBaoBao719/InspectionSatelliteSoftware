@@ -49,7 +49,7 @@ sys.path.insert(0, os.getcwd() + 'YOLOv5')
 
 import Timer
 from Camera import *
-from DetectronPredictor import *
+from DetectronPredict import *
 #from YoloPredictor import run
 
 

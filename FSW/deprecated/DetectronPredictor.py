@@ -19,6 +19,8 @@ from detectron2.data import MetadataCatalog, DatasetCatalog
 
 from detectron2.structures import BoxMode
 
+MODEL_WEIGHTS_PATH = os.getcwd() + "/handrail_model.pth"
+print(type(MODEL_WEIGHTS_PATH))
 
 def get_handrail_dicts(img_dir):
     json_file = os.path.join(img_dir, "via_region_data.json")
@@ -107,7 +109,7 @@ handrail_metadata = MetadataCatalog.get("handrail_train")
 # Setup inference configuration parameters
 cfg = get_cfg()
 cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"))
-cfg.MODEL.WEIGHTS = '/home/pi/Mask_Handrail/model_final.pth' # Set path model .pth
+cfg.MODEL.WEIGHTS = MODEL_WEIGHTS_PATH # Set path model .pth
 cfg.MODEL.DEVICE = 'cpu'
 #cfg.DATASETS.TRAIN = ("handrail_train",)
 #cfg.DATASETS.TEST = ("handrail_val",)
