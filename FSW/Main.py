@@ -531,13 +531,7 @@ def setup():
     except TypeError as e:
         print("ISSUE WITH READING THE STATE VARIABLE: DEPLOYED")
         print(e)
-    
-    # If deployed is FALSE, create a Burnwire() object and invoke the burn function
-    # Runs .burn() for both pins at 5000 Hz for 1 second
 
-    # SETUP AND DEPLOY BURNWIRE 
-    # setupBurnwire(Burn_Wire, deployed)
-    
     # INITIALIZE PAYLOAD CAMERA 
     """
     while PiCamera is None:
@@ -578,20 +572,6 @@ def setup():
     writeStateVariable(STATE_VAR_PATH, "DEPLOYED", True)
 
     # CHECK SYSTEM HEALTH
-    """
-    if verifySystem():
-        pass
-    else:
-        reboot()
-    """
-    
-
-  
-
-if __name__ == "__main__":
-    
-    # Run system setup
-    setup()
 
     """
     # Run the system setup function after 5 seconds
@@ -608,10 +588,46 @@ if __name__ == "__main__":
     system_check = (cpu_check or serial.is_open)
     # Send health data packet to primary flight computer for check
     writeStateVariable(state_variables_path, "HARDWARE_ERROR", system_check)
+    """
 
-    image_path = picam.getCapturePath()
+    """
+    if verifySystem():
+        pass
+    else:
+        reboot()
+    """
+    pass
     
+TOTAL_HDD_EXPERIMENTS = 10 # number experiments to perform
+TIME_PER_HDD = 5 # 5 mins between each experiment
+
+def HDD_Main():
+    # Start HDD Experiment
+    HDD_results = []
+    num_experiements = 0
+    while True:
+        if num_experiements == TOTAL_HDD_EXPERIMENTS:
+            break
+        if (timer >= TIME_PER_HDD):
+            HDD_results.append(doHDD()) 
+            time.sleep(5) # Wait for system to settle after 5 mins
+        else:
+            timer += elapsed_time
+        num_experiements += 1
+
+    # Write HDD results to UCD Data buffer
+    pass
+
+def HIO_Main():
+    # If deployed is FALSE, create a Burnwire() object and invoke the burn function
+    # Runs .burn() for both pins at 5000 Hz for 1 second
+
+    # SETUP AND DEPLOY BURNWIRE 
+    # setupBurnwire(Burn_Wire, deployed)
     
+    # image_path = picam.getCapturePath()
+    
+    """
     # Main Science FSW 
     while True:
         # if the elapsed time on the timer thread is a multiple of the timer interval 
@@ -646,4 +662,14 @@ if __name__ == "__main__":
             #TODO: must be able to read from Rx and implement parity bit outcome
             pass
         """
-    ser.__exit__()
+  
+
+if (__name__ == "__main__"):
+
+    # Run system setup
+    setup()
+
+    
+    pass
+    # ser.__exit__()
+    
