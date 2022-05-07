@@ -1,19 +1,19 @@
 # General Setup
 import time
-import board
-i2c = board.I2C()
+# import board
+# i2c = board.I2C()
 
 # ESC Setup
 import os
-os.system ("sudo pigpiod")
+# os.system ("sudo pigpiod")
 import pigpio
 
 # Voltmeter
-import adafruit_ina260
+# import adafruit_ina260
 
 # IMU
-import adafruit_icm20x
-IMU = adafruit_icm20x.ICM20948(i2c)
+# import adafruit_icm20x
+# IMU = adafruit_icm20x.ICM20948(i2c)
 
 # Connect ESC
 ESC = 18

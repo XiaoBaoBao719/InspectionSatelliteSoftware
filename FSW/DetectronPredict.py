@@ -28,9 +28,9 @@ def Inference_Mask(im, inference_threshold):
   cfg = get_cfg() 
   cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"))
   #cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, model_filename)  # path to the model we just trained
-  #cfg.MODEL.WEIGHTS = "/home/xiaobao/InspectionSatCV/ExtractionScripts/model_0004999.pth"
+  cfg.MODEL.WEIGHTS = os.getcwd()+'/FSW/handrail_model.pth'
   # FOR DEBUGGING ONLY
-  #cfg.MODEL.DEVICE = 'cpu'
+  cfg.MODEL.DEVICE = 'cpu'
 
 
   cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1  # only has one class (ballon). (see https://detectron2.readthedocs.io/tutorials/datasets.html#update-the-config-for-new-datasets)
@@ -59,7 +59,7 @@ def Inference_Mask(im, inference_threshold):
 
 
 # ### FOR DEBUGGING PURPOSES ###
-model_filename = "/home/xiaobao/InspectionSatCV/ExtractionScripts/model_0004999.pth"    #located in output.zip folder
+model_filename = os.getcwd()+'/FSW/handrail_output.pth'    #located in output.zip folder
 im = cv2.imread("capImg_multi.jpg")     #located in same directory as inference_mask.py
 inference_threshold = 0.02
 det_dict = Inference_Mask(im, inference_threshold)

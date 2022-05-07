@@ -9,16 +9,17 @@ arducam_vcm =CDLL('./lib/libarducam_vcm.so')
 focus_val = 292;
 #from Focuser import Focuser
 
+EXPO_TIME = 700
+ISO = 600
+O_VAL = 0
 
 num = 0
-
 
 def moveImg(orig, new):
     """ copy file from "orig" directory and
         and save the same file under "new" direcotry
     """
     shutil.copyfile(orig,new)
-
 
 
 def run(exposure_time = 700, iso = 600, o = 0):

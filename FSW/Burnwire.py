@@ -9,9 +9,12 @@ Uses Raspberry Pi GPIO pins in order to control S/C burnwire configuration and d
 via the use of Pulse WIdth Modulation (PWM) pin output.
 """
 
+from multiprocessing.connection import wait
 from RPIO import PWM
 from time import sleep
 import RPi.GPIO as GPIO
+
+from FSW.Main import Burn_Wire
 
 # =====================================
 # ==         GLOBAL VARS         ==
@@ -23,6 +26,10 @@ BURN_POS_2 = 13 # GPIO13
 
 BURN_CHANNELS = {'channel_1':BURN_POS_1, 'channel_2':BURN_POS_2}
 
+DEF_DUTY_CYCLE = 100 # percentage
+DEF_FREQ = 5000 # Hz
+DEF_DUR = 5 # seconds
+
 class Burnwire:
     
     burnwireStatus = ""
@@ -32,7 +39,7 @@ class Burnwire:
     freq = 500 # kHz
     duty_cyle = 0 # % percentage
     
-    def __init__(self, num_burnwires, init_freq, init_duty_cycle):
+    def __init__(self, num_burnwires, init_freq=DEF_FREQ, init_duty_cycle=DEF_DUTY_CYCLE):
         print("Initializing Burnwire")
         GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(False)
@@ -103,3 +110,9 @@ class Burnwire:
         GPIO.cleanup()
 
 
+test_wire = Burnwire(2, 1000, 100)
+print(test_wire.getBurnwireStatus())
+
+wait(5)
+
+test_wire.burn()

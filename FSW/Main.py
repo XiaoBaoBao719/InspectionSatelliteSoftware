@@ -43,11 +43,11 @@ import cv2 as cv
 from PIL import Image
 
 # Unique packages for the HDD Payload
-import board 
-import pigpio
-import adafruit_ina260 # Measures the voltmeter
-import adafruit_icm20x # Measures the IMU
-from JSC_FLIGHT_HDD_EXP import HDD_ccw_drive, HDD_cw_drive, HDD_stop
+# import board 
+# import pigpio
+# import adafruit_ina260 # Measures the voltmeter
+# import adafruit_icm20x # Measures the IMU
+# from JSC_FLIGHT_HDD_EXP import HDD_ccw_drive, HDD_cw_drive, HDD_stop
 
 from serial.serialutil import SerialException
 
@@ -112,8 +112,8 @@ Burn_Wire = None
 # =====================================
 # ==        HDD GLOBAL VARS          ==
 # =====================================
-i2c = board.I2C()
-imu = adafruit_icm20x.ICM20948(i2c)
+# i2c = board.I2C()
+# imu = adafruit_icm20x.ICM20948(i2c)
 pi = pigpio.pi(); 
 
 ESC_PINOUT = 18
@@ -604,16 +604,16 @@ TIME_PER_HDD = 5 # 5 mins between each experiment
 def HDD_Main():
     # Start HDD Experiment
     HDD_results = []
-    num_experiements = 0
+    num_experiments = 0
     while True:
-        if num_experiements == TOTAL_HDD_EXPERIMENTS:
+        if num_experiments == TOTAL_HDD_EXPERIMENTS:
             break
         if (timer >= TIME_PER_HDD):
             HDD_results.append(doHDD()) 
             time.sleep(5) # Wait for system to settle after 5 mins
         else:
             timer += elapsed_time
-        num_experiements += 1
+        num_experiments += 1
 
     # Write HDD results to UCD Data buffer
     pass
