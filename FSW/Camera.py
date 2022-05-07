@@ -65,18 +65,19 @@ class Camera():
     num_pics_taken = 0
     # --timeout from libcamera provides cmd line time of cam timeout, useful for try-catch
 
-    def __init__(self, exp, timeout, gain, delay, height, width):
+    def __init__(self,  height, width):
         """ Used to instantiate a Camera object with user-defined preferences for debugging.
         """
         self.pxl_height = height
         self.pxl_width = width
-        self.exposure_time = " --shutter {0}".format(exp)                #set the exposure time in (ms)
+  #     self.exposure_time = " --shutter {0}".format(exp)                #set the exposure time in (ms) 100ms to 200ms set at 8000ms
+        
         '''set shutter speed numerically closest to the lens focal length
          For example, for handheld use of a 35 mm camera with a 50 mm normal lens, 
          the closest shutter speed is 1/60 s (closest to "50"), while for a 200 mm lens 
          it is recommended not to choose shutter speeds below 1/200 of a second.'''
-        self.delay = delay
-        self.timeout = timeout #5000 # 5 second MAX for timeout                   #takes picture after 5s of previewing
+        
+#       self.time_out = "-t {}".format(timeout) #5000 # 5 second MAX for timeout                   #takes picture after 5s of previewing
         self.encoding = 'jpg'
         self.mode = 'libcamera-still '
         self.preview_mode = ' --nopreview ' # used only for debugging
@@ -87,10 +88,12 @@ class Camera():
         self.width = ""
         self.num_pics_taken = 0
         self.num_gain = 0
-        self.gain = " --gain {0}".format(gain)
-        self.ev = " --ev {0}".format(6) 
+  #      self.gain = " --gain {0}".format(gain)
+        self.ev = " --ev {0}".format(0) 
         self.awb = " --awb {0}".format("auto")           #awb = (auto, incandescent, tungsten, fluorescent)
-        self.gain_value = gain
+        self.gain_value = 0
+        self.timeout_value = 0                       #initialize to 0
+        self.exposure_time_value = 0
        
         #self.focus = " --autofocus"
 
@@ -105,7 +108,7 @@ class Camera():
         self.framerate = " --framerate {0}".format() """
 
 
-    def takePicture(self, file_name):
+    def takePicture(self, filename, gain, exposure_time, timeout):
         """ Used by Camera object to take a picture with libcamera. A file name is specified so that the 
             output path will generate a unique image file in said output path. Uses CLI to generate the 
             image. 
@@ -114,15 +117,25 @@ class Camera():
             while attempting to take the image.
         """
         print("Taking a picture!")
-
-        self.output = "".join('-o ' + self.outpath + '\\' + file_name + ' ')
+        
+        self.gain_value = gain
+        
+        self.timeout_value = timeout
+        self.time_out = " -t {}".format(timeout)
+        self.exposure_time = " --shutter {0}".format(exposure_time)
+        self.exposure_time_value = exposure_time
+        self.gain = " --gain {0}".format(gain)
+        
+        self.output = "".join('-o ' + self.outpath + '\\' + filename + "gain:{gainval}_exp:{exp}_t:{tout}.jpg".format(gainval = gain, exp = exposure_time, tout = timeout))
         self.out_encoding = "".join(' -e ' + self.encoding)
-        self.timeout = "".join('-t ' + str(self.timeout))
+        self.timeout = self.time_out
         self.height = "".join(' --height ' +  str(self.pxl_height) + ' ')
-        self.width = "".join('--width ' + str(self.pxl_width) + ' ')
+        self.width = "".join('--width ' + str(self.pxl_width) + ' ') 
 
-        self.param = (self.mode, self.output, self.timeout, self.height, self.width, self.gain, self.exposure_time, self.ev, self.out_encoding)
+
+        self.param = (self.mode, self.output, self.timeout, " --vflip", self.height, self.width, self.gain, self.exposure_time, self.ev, self.out_encoding)
         self.config = "".join(self.param)
+        
 
         try:
             system(self.config)
@@ -134,6 +147,7 @@ class Camera():
         
         
         print(self.config)
+        
         return True
 
     def getNumPicsTake(self):
@@ -142,18 +156,32 @@ class Camera():
         return self.num_pics_taken
     
     def getGainVal(self):
-        """ Returns the number of images successfully captured by the Camera object.
+        """ Returns the gain value successfully captured by the Camera object.
         """
         return self.gain_value
+    
+    def getExposureTimeVal(self):
+        """ Returns the gain value successfully captured by the Camera object.
+        """
+        return self.exposure_time_value
+    
+    def getTimeoutVal(self):
+        """ Returns the gain value successfully captured by the Camera object.
+        """
+        return self.timeout_value
 
 # For debugging purposes only
 if __name__ == "__main__":
-    picam = Camera(exp = 8000, timeout = 10000, gain = 10, delay = 3000, height = 1080, width = 1920)
+    
+    
+    
+    
+    picam = Camera(height = 1080, width = 1920)
 
-    picam.takePicture("test{num}_gain_{gain}.jpg".format(num = picam.getNumPicsTake(), gain = picam.getGainVal()))
+    picam.takePicture("test{num}_gain_{gain}.jpg".format(num = picam.getNumPicsTake(), gain = picam.getGainVal()), gain = 10, exposure_time=8000, timeout = 100000 )
     #picam.takePicture("test6.jpg")  
     
-
+#    picam.takePicture("test{num}_gain_{gain}.jpg".format(num = picam.getNumPicsTake(), gain = picam.getGainVal()), gain = 10, exposure_time = 8000, timeout = 5000)
 
 
     
