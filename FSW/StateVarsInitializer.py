@@ -22,10 +22,11 @@ def main():
     my_path = '/home/xiaobao/InspectionSatCV/FSW/STATE_VARIABLES.json'
 
     # Python object
-    initial_vars = {"BOOT_COUNTER": 0, 
-                    "HARDWARE_ERROR" : "False", 
+    initial_vars = {"HARDWARE_ERROR" : "False", 
                     "DEPLOYED" : "False", 
-                    "BUTNWIRE_FIRED" : "False",
+                    "BURNWIRE_FIRED" : "False",
+                    "BOOT_COUNTER": 0, 
+                    "NUMBER_DARK_READINGS" : 0,
                     "NUMBER_IMAGES" : 0, 
                     "NUMBER_UNPROCESSED_IMAGES": 0, }
 

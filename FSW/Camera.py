@@ -11,8 +11,6 @@ import threading
 # ==         GLOBAL VARS         ==
 # =====================================
 
-out_path = "\home\pi\InspectionSatCV\FSW" # file path to the directory that will store the image from camera
-
 class Camera():
     """ Camera Class implements functionality in order to support Arducam by using the libcamera library.
         It is currently hardcoded in order to interact with a Linux-based operating system that supports
@@ -47,6 +45,7 @@ class Camera():
         width : int
             Describes the image width.
     """
+    path = "\home\pi\InspectionSatCV\FSW" # file path to the directory that will store the image from camera
     exposure_time = 0
     delay = 0
     shutter_speed = 0
@@ -81,7 +80,7 @@ class Camera():
         self.encoding = 'jpg'
         self.mode = 'libcamera-still '
         self.preview_mode = ' --nopreview ' # used only for debugging
-        self.outpath = out_path
+        self.path = "\home\pi\InspectionSatCV\FSW"
         self.output = ""
         self.out_encoding = ""
         self.height = ""
@@ -117,6 +116,7 @@ class Camera():
             while attempting to take the image.
         """
         print("Taking a picture!")
+<<<<<<< HEAD
         
         self.gain_value = gain
         
@@ -127,6 +127,10 @@ class Camera():
         self.gain = " --gain {0}".format(gain)
         
         self.output = "".join('-o ' + self.outpath + '\\' + filename + "gain:{gainval}_exp:{exp}_t:{tout}.jpg".format(gainval = gain, exp = exposure_time, tout = timeout))
+=======
+
+        self.output = "".join('-o ' + self.path + '\\' + file_name + ' ')
+>>>>>>> a5613a168c4e5e1caad3bfddb01dcb6f747fedd9
         self.out_encoding = "".join(' -e ' + self.encoding)
         self.timeout = self.time_out
         self.height = "".join(' --height ' +  str(self.pxl_height) + ' ')
@@ -141,14 +145,18 @@ class Camera():
             system(self.config)
         except Exception:
             print("Failed to take picture due to raised exception: ", system.exec_info()[2])
-            return False
+            return (False, self.path+'\\'+file_name)
         #system('libcamera-jpeg -o handrail-input.jpg -t 5000 --width 800 --height 600')
         self.num_pics_taken += 1
         
         
         print(self.config)
+<<<<<<< HEAD
         
         return True
+=======
+        return (True, self.path+'\\'+file_name)
+>>>>>>> a5613a168c4e5e1caad3bfddb01dcb6f747fedd9
 
     def getNumPicsTake(self):
         """ Returns the number of images successfully captured by the Camera object.
@@ -160,6 +168,7 @@ class Camera():
         """
         return self.gain_value
     
+<<<<<<< HEAD
     def getExposureTimeVal(self):
         """ Returns the gain value successfully captured by the Camera object.
         """
@@ -169,6 +178,10 @@ class Camera():
         """ Returns the gain value successfully captured by the Camera object.
         """
         return self.timeout_value
+=======
+    def getCapturePath(self):
+        return self.path
+>>>>>>> a5613a168c4e5e1caad3bfddb01dcb6f747fedd9
 
 # For debugging purposes only
 if __name__ == "__main__":
