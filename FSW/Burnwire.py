@@ -64,7 +64,7 @@ class Burnwire:
             print ("Burnwires Inactive")
         return self.burnwireStatus
 
-    def burn(self, burn_num, duty_cycle, freq, duration):
+    def burn(self, burn_num, duty_cycle=DEF_DUTY_CYCLE, freq=DEF_FREQ, duration=DEF_DUR):
         """ Calls GPIO pins in order to run current through burn resistor and
             trigger the release mechanism
         Parameters
