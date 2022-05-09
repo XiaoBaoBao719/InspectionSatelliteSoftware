@@ -44,6 +44,7 @@ import serial
 # import threading
 import json
 import cv2 as cv
+import subprocess
 from PIL import Image
 
 # Unique packages for the HDD Payload
@@ -89,12 +90,12 @@ NUM_BURNWIRES = 2
 # =====================================
 # ==       COMMS GLOBAL VARS         ==
 # =====================================
-BAUDRATE = 9600
+BAUDRATE = 115200
 SYS_TIMEOUT = 5 # seconds
 mini_UART = '/dev/ttyS0'
-PL011 = '/dev/ttyAMA0'
+PL011 = '/dev/ttyAMA0' 
 SERIAL_PORT = PL011
-ser = serial.Serial()
+
 
 # =====================================
 # ==           CV VARS               ==
@@ -152,7 +153,6 @@ STATE_VAR_PATH = os.getcwd() + '/' + STATE_VAR_NAME
 init_file = ""
 deployed = False
 burnwireFired = False
-
 global_timer = None
 
 
@@ -231,40 +231,46 @@ def initializeComputer():
     GPIO.setmode(GPIO.BCM)
     GPIO.setwarnings(False)
 
-def serialSetup():
-    """ 
-    Parameters
-    ----------
-    ser: Serial
-        Serial object handles UART comms protocol with S/C
-    
-    Return
-    ---------
-        Serial object if successful connection and setup established, 
-        otherwise, return None
-    """
-    #SCIENCE = True
-    # Initialize Serial Port
-
-    print("\nAttemtping to open the serial port...")
-    ser = ""
-    try:
-        ser = serial.Serial(port=SERIAL_PORT, baudrate=BAUDRATE,
-                            parity=serial.PARITY_ODD,timeout=SYS_TIMEOUT,
-                            stopbits=serial.STOPBITS_ONE,bytesize=serial.EIGHTBITS)
-        print(ser.name)
-        ser.write(b'CV_Payload_Active')
-        ser.open()
-    except SerialException as e:
-        print("Issue with setting up UART connection!")
-        print(e)
-        ser = None
-    #counter = 0
-    
-    if ser is not None:
-        return ser
-
-    return None
+# This whole function was a terrible idea. You can do better Xiao!
+# def serialSetup():
+#     """ 
+#     Parameters
+#     ----------
+#     ser: Serial
+#         Serial object handles UART comms protocol with S/C
+#     
+#     Return
+#     ---------
+#         Serial object if successful connection and setup established, 
+#         otherwise, return None
+#     """
+#     
+#     if ser == None:
+#         # Initialize Serial Port
+#         print("\nAttemtping to open the serial port...")
+#         ser = ""
+#         try:
+#             ser = serial.Serial(port=SERIAL_PORT, baudrate=BAUDRATE,
+#                                 parity=serial.PARITY_ODD,timeout=SYS_TIMEOUT,
+#                                 stopbits=serial.STOPBITS_ONE,bytesize=serial.EIGHTBITS)
+#             print(ser.name)
+#             ser.write(b'CV_Payload_Active')
+#             ser.open()
+#             print("Serial connection successful! ", ser.name)
+#         except SerialException as e:
+#             print("Issue with setting up UART connection!")
+#             print(e)
+#             ser = None
+#     #counter = 0
+#     if ser.is_open:
+#         print("Serial port already open.")
+#         print(ser.name)
+#         return ser
+#     
+#     if ser is not None:
+#         return ser
+# 
+#     return None
 
 def verifySystem(serial):
     """ Performs system diagnotic checks on power, temperature, lighting, and comms
@@ -286,7 +292,7 @@ def verifySystem(serial):
     else:
         return True
 
-def checkTempCPU():
+def getCPUTemp():
     """ Checks the SoC temperature in the core processor
     Parameters
     ----------
@@ -299,24 +305,31 @@ def checkTempCPU():
     True of the processor is within a temperature range set by MAX_TEMP
     False if the processor temperature exceeds allowable (system will auto throttle)
     """
-    result = system('vcgencmd measure_temp')
-    temperature = float(result[5:9])
-    print('Current CPU Temp is :', temperature)
-    if temperature >= MAX_TEMP:
-        print('Exceeding maximum allowable compute temp')
-        return False
-    else:
-        return True
+    output = subprocess.check_output(["vcgencmd", "measure_temp", "core"])
+    # print(type(output))
+    temperature = float(output[5:9])
+    print('Current CPU Temp is :', temperature, " *C")
+    return temperature
+    
 
-def checkVoltage():
-    result = system('vcgencmd measure_volts core')
-    print("Current voltage running in: core", result)
-    return result
+def getVoltage():
+    output = subprocess.check_output(['vcgencmd', 'measure_volts', 'core'])
+    voltage = float(output[5:11])
+    print("Current voltage running in: core", voltage, 'V')
+    return voltage
 
 def reboot():
     """ Shell command to restart the RPi
     """
-    system('sudo restart')
+    print("Rebooting in 10 seconds")
+    reboot_time = FSWTimer()
+    reboot_time.start()
+    while reboot_time.elapsed_time() < 10:
+        time_left = 10 - reboot_time.elapsed_time()
+        print(f"Rebooting in: {time_left:0.2f}")
+    sleep(0.1)
+    # system('sudo restart')
+    sys.exit(0)
 
 def getInference(model, source):
     """ Calls CV models one after another, ensuring that light and dark lighting
@@ -346,7 +359,7 @@ def getInference(model, source):
     # return [{'Light': (detectron_results_lit, yolo_results_lit)} ,
     #         {'Dark':(detectron_results_dark, yolo_results_dark)}]
     
-def writePayloadData(results, ser):
+def writeData(results):
     """ Takes CV inference results from the model and writes the data to the S/C FC
         via UART serial protocol
     Arguments
@@ -355,48 +368,54 @@ def writePayloadData(results, ser):
         A properly formatted dataframe in the format of a string
         TODO: results is probably a dataframe and must be converted into a string and
         then converted into bytes for the input buffer
-    ser : Serial
-        A Serializable object that performs UART comms to the main flight S/C computer
     Parameters
     ----------
     bytesInBuffer: int
         Number of bytes still in the input buffer
-    counter: int
-        TODO: implement better timer var to track payload write process
-    packetStatus: bool
-        Carries the status of the write process
     Exceptions
     ---------
     SerialTimeoutException: Exception raised by Serial object if the connection
     times out, if so, restart the system serial connection.
     Returns
     ---------
-    True if the data packet was sent without any isses
+    True if the data packet was sent without any issues
     False if otherwise
     """
-    packetStatus = False
-    #counter = 0
-    while True:
+    buffer = str(results)
+    
+    with serial.Serial() as ser:
+        ser.port=SERIAL_PORT
+        ser.baudrate=BAUDRATE
+        ser.parity=serial.PARITY_NONE
+        ser.timeout=SYS_TIMEOUT
+        ser.stopbits=serial.STOPBITS_ONE
+        ser.bytesize=serial.EIGHTBITS
+        ser.open()
+
         try:
-            ser.write(b'Writing CV results: \n'%(results))
+            print("Writing results")
+            ser.write(buffer)
+            print("Packet sent")
+            time.sleep(1) # Wait one second for packet to send
+            return True
+            
         except (serial.SerialTimeoutException):
             # Reset the buffer and reset the serial conection
             print("Serial Timed out! Re-attempting connection...")
             ser.reset_input_buffer()
             ser.reset_output_buffer()
-            serialSetup()
-
-        bytesInBuffer = ser.in_waiting()
-        print(bytesInBuffer)
-        print(ser.out_waiting())
-        print("Packet sent")
-        time.sleep(1) # Wait one second for packet to send
+    
+        # bytesInBuffer = ser.in_waiting()
+        # print(bytesInBuffer)
+        # print(ser.out_waiting())
+        
         #counter += 1
-        if(bytesInBuffer is None):
-            packetStatus = True
-            break
+        # if(bytesInBuffer is None):
+        #     packetStatus = True
+        #     return packetStatus
+    ser.close()
     ser.flush()
-    return packetStatus
+    return False
 
 def readStateVariable(file, state_var):
     """ Reads a JSON file that holds the state variables and returns a string set based on the 
@@ -509,6 +528,9 @@ def doHDD():
     # [w_x0, w_y0, w_z0, w_xf, w_yf, w_zf] = HDD_ccw_drive(sleep_time, delta)   uncomment when testing!
     # HDD_stop()
     [w_x0, w_y0, w_z0, w_xf, w_yf, w_zf] = [-1.0, -2.0, -3.0, -1.0, -2.0, -3.0]
+    #dummy_hdd_list = np.random.rand(6,0).tolist()
+    #print(dummy_hdd_list)
+    #[w_x0, w_y0, w_z0, w_xf, w_yf, w_zf] = dummy_hdd_list
     print("Initial Gyro X:%.2f, Y: %.2f, Z: %.2f rads/s" % (w_x0, w_y0, w_z0))
     print("Final Gyro X:%.2f, Y: %.2f, Z: %.2f rads/s" % (w_xf, w_yf, w_zf))
     return [w_x0, w_y0, w_z0, w_xf, w_yf, w_zf]
@@ -521,7 +543,8 @@ def setup():
     initializeComputer()
 
     # Setup UART protocol with main flight computer
-    ser = serialSetup() 
+    # ser = serialSetup()
+    # This is actually a terrible idea. We should only open the serial connection when transmitting data.
 
     # Increase the boot counter
     boot_counter_str = readStateVariable(STATE_VAR_PATH, "BOOT_COUNTER")
@@ -587,34 +610,48 @@ def setup():
     
     # CHECK SYSTEM HEALTH
 
-    """
-    # Initialize the paylaod clock
+    # Initialize the payload clock
     global_timer = FSWTimer()
     global_timer.start()
     
-    # Read the temperature?
-    cpu_check = checkTempCPU()
-    # Read the battery voltage?
-    checkVoltage()
-    # Check system health is good
-    system_check = (not cpu_check or not ser)
-    # Send health data packet to primary flight computer for check
-    writeStateVariable(state_variables_path, "HARDWARE_ERROR", system_check)
-    """
-
-    """
-    if verifySystem():
-        pass
-    else:
-        reboot()
-    """
-    pass
+    # Assume no system errors yet
+    system_error = False
     
-TOTAL_HDD_EXPERIMENTS = 5 # number experiments to perform
-TIME_PER_HDD = 5 # 5 mins between each experiment
+    # Check CPU is not too hot
+    cpu_temp = getCPUTemp()
+    if cpu_temp >= MAX_TEMP:
+        print(f"CPU temp is {cpu_temp:0.2f}")
+        print('CPU is too hot!')
+        system_error = True
+        
+    # Check voltage is not too low
+    voltage = getVoltage()
+    # voltage = 0.01  for testing voltage
+    
+    if voltage <= 0.1:
+        print(f"Voltage is {voltage:0.2f}") 
+        print("Voltage too low!")
+        system_error = True
+    # Check system health is good
+    
+    # Send health data packet to primary flight computer for check
+    writeStateVariable(STATE_VAR_PATH, "HARDWARE_ERROR", system_error)
+
+    if system_error:
+        print("Anomally detected! Rebooting...")
+        sleep(5)
+        reboot()
+    
+    print("Health Check Complete. \n Standing by")
+    sleep(5)
+    
+TOTAL_HDD_EXPERIMENTS = 2 # number experiments to perform
+TIME_PER_HDD = 10 # 5 mins between each experiment
 
 def HDD_Main():
     # Start HDD Experiment
+    print("Initiating HDD experiment...")
+    sleep(5)
     HDD_results = []
     num_experiments = 1
     HDD_timer = FSWTimer()
@@ -626,8 +663,9 @@ def HDD_Main():
             print(f"Elapsed time: {HDD_timer.elapsed_time():0.4f} seconds")
             experiment_run = doHDD()
             HDD_results.append(experiment_run)
-            print("Finished experiment")
-            sleep(TIME_PER_HDD) # Wait for system to settle after 5 mins
+            
+            print("Run successful!")
+            # sleep(TIME_PER_HDD) # Wait for system to settle after 5 mins
 
         num_experiments += 1
     
@@ -635,6 +673,7 @@ def HDD_Main():
     HDD_timer.stop()
     # Write HDD results to UCD Data buffer
     print("Writing HDD data to buffer...")
+    writeData(HDD_results)
     pass
 
 def HIO_Main():
@@ -669,6 +708,9 @@ def HIO_Main():
     # image_path = picam.getCapturePath()
     
     getSpacecraftState(STATE_VAR_PATH)
+    
+    print("Initiating HIO Experiment...")
+    sleep(5)
     """
     # Main Science FSW 
     while True:
@@ -716,6 +758,9 @@ if (__name__ == "__main__"):
     HIO_Main()
     
     # Clean up system
+    #ser.close()
     os.system ("sudo killall pigpiod")
-    ser.__exit__()
+    print("Goodbye!")
+    sleep(2)
+    #ser.__exit__()
     

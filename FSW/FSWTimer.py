@@ -25,7 +25,7 @@ class FSWTimer:
         """Cease the timer and report how much time has elapssed"""
         if self.start_time is None:
             raise FSWTimeError(f"Timer was not initialized, please start the timer first!")
-
+    
         elapsed_time =  time.perf_counter() - self.start_time
         self.start_time = 0
         print(f"Stopping the timer \n Total elapsed time passed is: {elapsed_time:0.4f} seconds")
