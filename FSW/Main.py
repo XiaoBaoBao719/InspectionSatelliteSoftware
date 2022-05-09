@@ -20,38 +20,45 @@ pySerial
 TODO: CREATE A PINOUT TXT OR JSON THAT SETS ALL OF THE PIN LOCATIONS 
 
 """
+# Use the correct version of Python...
+#!/usr/bin/Python3
+
 # =====================================
 # ==         CONFIGURATION           ==
 # =====================================
 
-from distutils.dep_util import newer_pairwise
+# from distutils.dep_util import newer_pairwise
 import os
-from time import time
+import time
+from time import sleep
 import sys
-from tkinter import NONE
+# from tkinter import NONE
 # from loguru import RotationFunction, logger
 # from pathlib import Path, WindowsPath5
 
 import numpy as np
-import math
+# import math
 #import loguru
-# import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO
 import serial
-import threading
+# import threading
 import json
 import cv2 as cv
 from PIL import Image
 
 # Unique packages for the HDD Payload
-# import board 
+# import board
+
+# os.system ("sudo pigpiod") # start pigpio daemon before doing anything
 # import pigpio
+
 # import adafruit_ina260 # Measures the voltmeter
 # import adafruit_icm20x # Measures the IMU
-# from JSC_FLIGHT_HDD_EXP import HDD_ccw_drive, HDD_cw_drive, HDD_stop
+from JSC_FLIGHT_HDD_EXP import HDD_ccw_drive, HDD_cw_drive, HDD_stop
 
 from serial.serialutil import SerialException
 
-# from Burnwire import Burnwire
+from Burnwire import Burnwire
 # from DriverLED import DriverLED
 # from Camera import Camera
 
@@ -59,9 +66,9 @@ sys.path.insert(0, os.getcwd() + '/FSW')
 sys.path.insert(0, os.getcwd() + '/Detectron2')
 sys.path.insert(0, os.getcwd() + 'YOLOv5')
 
-import Timer
+from FSWTimer import *
 # from Camera import *
-from DetectronPredict import Inference_Mask
+# from DetectronPredict import Inference_Mask
 
 #from YoloPredictor import run
 
@@ -69,14 +76,15 @@ from DetectronPredict import Inference_Mask
 # =====================================
 # ==         DEPLOYMENT VARS         ==
 # =====================================
-PHOTODIODE_PIN = 9 # Photodiode GPIO20
+# PHOTODIODE_PIN = 9 # Photodiode GPIO20
 #INPUT_PIN = 10
 #BURN_PIN_1 = 11
 #BURN_PIN_2 = 12
 #LED_PIN = 14
 #BURNWIRE_PINS = (BURN_PIN_1, BURN_PIN_2)
-BURNWIRE_WAIT_TIME = 20 # mins
-PHOTODIODE_THRESH = 1 # We need to test photodiode to find a good value for this
+# BURNWIRE_WAIT_TIME = 20 # mins
+# PHOTODIODE_THRESH = 1 # We need to test photodiode to find a good value for this
+NUM_BURNWIRES = 2
 
 # =====================================
 # ==       COMMS GLOBAL VARS         ==
@@ -106,24 +114,24 @@ TIMEOUT = 10000
 WIDTH = 800 # px
 HEIGHT = 600 # px
 
-PiCamera = None
-Burn_Wire = None
+piCamera = None
+burnwire = None
 
 # =====================================
 # ==        HDD GLOBAL VARS          ==
 # =====================================
 # i2c = board.I2C()
 # imu = adafruit_icm20x.ICM20948(i2c)
-pi = pigpio.pi(); 
+# pi = pigpio.pi(); 
 
-ESC_PINOUT = 18
+# ESC_PINOUT = 18
 
-pi.set_servo_pulsewidth(ESC_PINOUT, 0)
+# pi.set_servo_pulsewidth(ESC_PINOUT, 0)
 
 # ESC input range
-NEUTRAL_ESC_IN = 1488
-MAX_CCW_ESC_IN = 1132
-MAX_CW_ESC_IN = 1832
+# NEUTRAL_ESC_IN = 1488
+# MAX_CCW_ESC_IN = 1132
+# MAX_CW_ESC_IN = 1832
 
 
 # Ramp parameters
@@ -145,11 +153,13 @@ init_file = ""
 deployed = False
 burnwireFired = False
 
+global_timer = None
 
-def startTimer(timer):
-    """ TODO: initializes the global timer var as a seperate thread process
-    """
-    timer.start()
+
+# def startTimer(timer):
+#    """ TODO: initializes the global timer var as a seperate thread process
+#    """
+#     timer.start()
 
 def clamp(n, minn, maxn):
     """ Helper function
@@ -218,9 +228,8 @@ def initializeComputer():
         the experiment timer
     """
     print("\n ++++++++ STARTING FLIGHT COMPUTER +++++++++++")
-    # GPIO.setmode(GPIO.BCM)
-    # GPIO.setwarnings(False)
-    # startTimer()
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setwarnings(False)
 
 def serialSetup():
     """ 
@@ -272,7 +281,7 @@ def verifySystem(serial):
     # TODO: Perform RAM check, VRAM check, Power check, Lighting check, Camera check
     if not serial.is_open:
         return False
-    elif not checkTempCPU():
+    if not checkTempCPU():
         return False
     else:
         return True
@@ -406,21 +415,22 @@ def readStateVariable(file, state_var):
         #data = json.load(file)
         with open(file, 'r') as json_out:
             temp = json.loads(json_out.read()) # gets a string, converts to dict
-            print(temp)
+            # print(temp)
     except Exception as e:
         print("Error reading the state variable file")
         print("Exception: ", e)
         return ("NO_VALUE", False) 
 
-    for state in temp: # USED FOR DEBUGGING ONLY
-        print(state)    # prints all of the state variables
+    # for state in temp: # USED FOR DEBUGGING ONLY
+    #     print(state)    # prints all of the state variables
 
     if state_var in temp:
-        print("Here is the value for ", state_var)
-        print(temp[state_var])
+    #     print("Here is the value for ", state_var)
+    #     print(temp[state_var])
         return (temp[state_var], True)
     else:
         print("Could not locate the State Variable!")
+        print("State variable: ", state_var)
         return("EMPTY STATE", False)
 
 def writeStateVariable(file, state_var, new_val):
@@ -440,12 +450,12 @@ def writeStateVariable(file, state_var, new_val):
         with open(file, 'r') as json_out:
             new_msg = json.loads(json_out.read())
             #print(type(new_msg["name"]))
-            print("Update state: ", state_var)
-            print("New value will be: ", new_val)
+            # print("Update state: ", state_var)
+            # print("New value will be: ", new_val)
             # new_msg.update(state_var=new_val)
             new_msg[state_var] = new_val
-            print("\n New value for states: ")
-            print(new_msg)
+            # print("\n New value for states: ")
+            # print(new_msg)
             temp = new_msg
         with open(file, 'w') as json_out:
             json_out.write(json.dumps(temp))
@@ -453,10 +463,22 @@ def writeStateVariable(file, state_var, new_val):
         print("Issue with writing the State Variables!")
         return False
 
-    with open(file, 'r') as f: # Debugging statement to read what was written
-        print(f.read())
+    # with open(file, 'r') as f: # Debugging statement to read what was written
+    #     print(f.read())
     return True
 
+def getSpacecraftState(file):
+    temp = {} # temporary Python dictionary to hold state variables
+    try:
+        #data = json.load(file)
+        with open(file, 'r') as json_out:
+            parsed = json.loads(json_out.read()) # gets a string, converts to dict
+            print(json.dumps(parsed, indent=4, sort_keys=False))
+    except Exception as e:
+        print("Error reading the state variable file")
+        print("Exception: ", e)
+        return ("NO_VALUE", False)
+    
 """
 def setupBurnwire(wire, deployed):
     # TODO: Check if the Burnwire object exists. Only want to create a single Burnwire object once!
@@ -483,9 +505,10 @@ def setupBurnwire(wire, deployed):
         print("Burnwire object already created!")
 """
 
-def doHDD(sleep_time, delta):
-    [w_x0, w_y0, w_z0, w_xf, w_yf, w_zf] = HDD_ccw_drive(sleep_time, delta)
-    HDD_stop()
+def doHDD():
+    # [w_x0, w_y0, w_z0, w_xf, w_yf, w_zf] = HDD_ccw_drive(sleep_time, delta)   uncomment when testing!
+    # HDD_stop()
+    [w_x0, w_y0, w_z0, w_xf, w_yf, w_zf] = [-1.0, -2.0, -3.0, -1.0, -2.0, -3.0]
     print("Initial Gyro X:%.2f, Y: %.2f, Z: %.2f rads/s" % (w_x0, w_y0, w_z0))
     print("Final Gyro X:%.2f, Y: %.2f, Z: %.2f rads/s" % (w_xf, w_yf, w_zf))
     return [w_x0, w_y0, w_z0, w_xf, w_yf, w_zf]
@@ -493,23 +516,16 @@ def doHDD(sleep_time, delta):
 def setup():
     """ Performs initial bootup sequence once and deploys the payload mechanism
         Checks status of components by writing to a json file
-    Parameters
-    ----------
-    val: 
     """
     # INITIALIZE F/C GPIO
     initializeComputer()
 
     # Setup UART protocol with main flight computer
-    # ser = serialSetup() 
+    ser = serialSetup() 
 
-    # Write to the STATE_VARIABLE json:
-    #   -Increase the boot counter
-
+    # Increase the boot counter
     boot_counter_str = readStateVariable(STATE_VAR_PATH, "BOOT_COUNTER")
-
-    # Attempt to read the boot counter and cast to an integer, assumes that the boot counter 
-    # is called correctly
+    # Attempt to read the boot counter
     try:
         current_num_boots = int(boot_counter_str[0])
     except Exception as e:
@@ -517,15 +533,13 @@ def setup():
         print(e)
         print(boot_counter_str)
         current_num_boots = 0
-
     # Increment the boot counter by one
     current_num_boots += 1
-    # Write the new number of boots to the state variables
+    # Write the new boot counter
     writeStateVariable(STATE_VAR_PATH, "BOOT_COUNTER", current_num_boots)
 
-
-    read_out = readStateVariable(STATE_VAR_PATH, "DEPLOYED") # Check for the state variable for DEPLOYED
-
+    # Check for the state variable for DEPLOYED
+    read_out = readStateVariable(STATE_VAR_PATH, "DEPLOYED") 
     try:
         deployed = read_out[0] # Get the state variable for Deployed
     except TypeError as e:
@@ -534,14 +548,14 @@ def setup():
 
     # INITIALIZE PAYLOAD CAMERA 
     """
-    while PiCamera is None:
+    if PiCamera is None:
         try:
             PiCamera = Camera(exp=EXPOSURE_TIME, timeout=TIMEOUT, gain=GAIN, 
                                 delay=DELAY, height=HEIGHT, width=WIDTH)
         except RuntimeError:
-            print("Could not create PiCamera object!!")
-            print("\n Reattempting to create PiCamera instance \n")
+            print("Could not create PiCamera object!")
     """
+    
     # # Loop to check the Photodiode. Should this run as a parallel process?
     # photodiode_state = checkPhotodiode(PHOTODIODE_PIN)
 
@@ -567,25 +581,23 @@ def setup():
     #         # number_dark_readings = 0
     #         # Sleep 5 minutes
     #         time.sleep(50000)
-        
-    # Set DEPLOYED to TRUE
-    writeStateVariable(STATE_VAR_PATH, "DEPLOYED", True)
 
+    # Debugging statement
+    getSpacecraftState(STATE_VAR_PATH)
+    
     # CHECK SYSTEM HEALTH
 
     """
-    # Run the system setup function after 5 seconds
-    timer = Timer(5.0, setup)
-
-    # Initialize the timer
-    timer.start()
+    # Initialize the paylaod clock
+    global_timer = FSWTimer()
+    global_timer.start()
+    
     # Read the temperature?
     cpu_check = checkTempCPU()
     # Read the battery voltage?
     checkVoltage()
-    # Check serial communication is good
-
-    system_check = (cpu_check or serial.is_open)
+    # Check system health is good
+    system_check = (not cpu_check or not ser)
     # Send health data packet to primary flight computer for check
     writeStateVariable(state_variables_path, "HARDWARE_ERROR", system_check)
     """
@@ -598,35 +610,65 @@ def setup():
     """
     pass
     
-TOTAL_HDD_EXPERIMENTS = 10 # number experiments to perform
+TOTAL_HDD_EXPERIMENTS = 5 # number experiments to perform
 TIME_PER_HDD = 5 # 5 mins between each experiment
 
 def HDD_Main():
     # Start HDD Experiment
     HDD_results = []
-    num_experiments = 0
-    while True:
-        if num_experiments == TOTAL_HDD_EXPERIMENTS:
-            break
-        if (timer >= TIME_PER_HDD):
-            HDD_results.append(doHDD()) 
-            time.sleep(5) # Wait for system to settle after 5 mins
-        else:
-            timer += elapsed_time
-        num_experiments += 1
+    num_experiments = 1
+    HDD_timer = FSWTimer()
+    HDD_timer.start()
+    
+    while num_experiments <= TOTAL_HDD_EXPERIMENTS:
+        if (HDD_timer.elapsed_time() % TIME_PER_HDD >= 0):
+            print("Running HDD experiment: ", num_experiments)
+            print(f"Elapsed time: {HDD_timer.elapsed_time():0.4f} seconds")
+            experiment_run = doHDD()
+            HDD_results.append(experiment_run)
+            print("Finished experiment")
+            sleep(TIME_PER_HDD) # Wait for system to settle after 5 mins
 
+        num_experiments += 1
+    
+    print(f"Elapsed HDD time: {HDD_timer.elapsed_time():0.4f} seconds")
+    HDD_timer.stop()
     # Write HDD results to UCD Data buffer
+    print("Writing HDD data to buffer...")
     pass
 
 def HIO_Main():
     # If deployed is FALSE, create a Burnwire() object and invoke the burn function
     # Runs .burn() for both pins at 5000 Hz for 1 second
+    read_out = readStateVariable(STATE_VAR_PATH, "DEPLOYED") # Check for the state variable for DEPLOYED
 
-    # SETUP AND DEPLOY BURNWIRE 
-    # setupBurnwire(Burn_Wire, deployed)
+    try:
+        deployed = read_out[0] # Get the state variable for Deployed
+    except TypeError as e:
+        print("ISSUE WITH READING THE STATE VARIABLE: DEPLOYED")
+        print(e)
+    
+    print("Checking deployed state: ", deployed)
+    
+    if deployed == False and burnwire is None:
+        # SETUP AND DEPLOY BURNWIRE 
+        burnwire = Burnwire(NUM_BURNWIRES)
+        burnwire.getBurnwireStatus()
+        sleep(2)
+        burn_channels = [1, 2]
+        burn_result = burnwire.burn(burn_channels)
+        if burn_result:
+            print("Burn successful!")
+            # Set DEPLOYED to TRUE
+            writeStateVariable(STATE_VAR_PATH, "BURNWIRE_FIRED", True)
+            writeStateVariable(STATE_VAR_PATH, "DEPLOYED", True)
+            
+        else:
+            print("Burn attempt failed!")
     
     # image_path = picam.getCapturePath()
     
+    getSpacecraftState(STATE_VAR_PATH)
     """
     # Main Science FSW 
     while True:
@@ -669,7 +711,11 @@ if (__name__ == "__main__"):
     # Run system setup
     setup()
 
+    HDD_Main()
+    sleep(10) # Wait 10 minutes for steady-state
+    HIO_Main()
     
-    pass
-    # ser.__exit__()
+    # Clean up system
+    os.system ("sudo killall pigpiod")
+    ser.__exit__()
     

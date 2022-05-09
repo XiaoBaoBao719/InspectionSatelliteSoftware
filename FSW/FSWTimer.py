@@ -1,11 +1,13 @@
 # Timer class that helps the FSW keep track of time on the device
+# @Author: Xiao-Bao Bao
+# University of California, Davis
 
 import time
 
-class TimeError(Exception):
+class FSWTimeError(Exception):
     """ Class to handle exceptions in the timer class"""
 
-class Timer:
+class FSWTimer:
     def __init__(self) -> None:
         self.start_time = None
     
@@ -22,7 +24,7 @@ class Timer:
     def stop(self): 
         """Cease the timer and report how much time has elapssed"""
         if self.start_time is None:
-            raise TimeError(f"Timer was not initialized, please start the timer first!")
+            raise FSWTimeError(f"Timer was not initialized, please start the timer first!")
 
         elapsed_time =  time.perf_counter() - self.start_time
         self.start_time = 0

@@ -12,32 +12,33 @@ to reset the state variables back to their original config.
 Warning: Do not run this script at any time during S/C flight. It will reset all of the 
 state variables back to their original values.
 """
-
+import os
 import json
 
 def main():
 
     #file_path = '/home/pi/Desktop/STATE_VARIABLES.json' # For Raspberry Pi environment
     #my_path = '$HOME' + '/InspectionSatCV'
-    my_path = '/home/xiaobao/InspectionSatCV/FSW/STATE_VARIABLES.json'
+    my_path = os.getcwd()+'/STATE_VARIABLES.json'
 
     # Python object
-    initial_vars = {"HARDWARE_ERROR" : "False", 
-                    "DEPLOYED" : "False", 
-                    "BURNWIRE_FIRED" : "False",
+    initial_vars = {"HARDWARE_ERROR" : False, 
+                    "DEPLOYED" : False, 
+                    "BURNWIRE_FIRED" : False,
                     "BOOT_COUNTER": 0, 
                     "NUMBER_DARK_READINGS" : 0,
                     "NUMBER_IMAGES" : 0, 
                     "NUMBER_UNPROCESSED_IMAGES": 0, }
 
     json_str = json.dumps(initial_vars) # Convert to JSON string
-    print(type(json_str))
-
+    # print(type(json_str))
+    
     with open(my_path, 'w') as json_out: # Write to Json file
         json_out.write(json_str)
 
     with open(my_path, 'r') as json_out: # Debug statement to read what we just wrote
-        print(json.loads(json_out.read()))
+        parsed = json.loads(json_out.read())
+        print(json.dumps(parsed, indent=4, sort_keys=False))
     return
 
 if __name__ == "__main__":

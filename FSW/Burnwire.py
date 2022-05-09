@@ -16,7 +16,7 @@ from time import sleep
 # =====================================
 # ==         GLOBAL VARS         ==
 # =====================================
-#PD_POS = 20 # Photodiode GPIO20
+#PD_POS = 20 # Photodiode GPIO20 
 #INPUT_PIN = 10
 BURN_PIN_1 = 12 # GPIO12
 BURN_PIN_2 = 13 # GPIO13
@@ -66,7 +66,7 @@ class Burnwire:
         self.burn_status_1 = False
         self.burn_status_2 = False
     
-    def getBurnStatus(self):
+    def getBurnwireStatus(self):
         if self.burn_status_1:
             print("Burnwire 1 Active")
         if self.burn_status_2:
@@ -109,7 +109,7 @@ class Burnwire:
                 self.burn_status_2 = True
             sleep(0.2)
         # Hold burn for duration
-        self.getBurnStatus()
+        self.getBurnwireStatus()
         print("Burning!")
         sleep(duration)
         
@@ -120,7 +120,7 @@ class Burnwire:
         burn_status_2 = False
         # self.burn_pwm_1.ChangeDutyCycle(0)
         # self.burn_pwm_2.ChangeDutyCycle(0)
-        self.getBurnStatus()
+        self.getBurnwireStatus()
         self.destroy()
         return True
     
@@ -130,12 +130,14 @@ class Burnwire:
         """
         # self.burn_pwm_1.stop()
         # self.burn_pwm_2.stop()
+        print("Cleaning up burnwire...")
         GPIO.output(BURN_CHANNELS, GPIO.LOW)
         GPIO.cleanup()
 
 # Debugging Area
+"""
 test_wire = Burnwire(2)
-test_wire.getBurnStatus()
+test_wire.getBurnwireStatus()
 sleep(2)
 burn_channels = [1, 2]
 burn_result = test_wire.burn(burn_channels, duration=5)
@@ -143,4 +145,5 @@ if burn_result:
     print("Burn successful!")
 else:
     print("Burn attempt failed!")
+"""
 

@@ -1,18 +1,18 @@
 # General Setup
 import time
-# import board
-# i2c = board.I2C()
+import board
+i2c = board.I2C()
 
 # ESC Setup
 import os
-# os.system ("sudo pigpiod")
+os.system ("sudo pigpiod")
 import pigpio
 
 # Voltmeter
-# import adafruit_ina260
+import adafruit_ina260
 
 # IMU
-# import adafruit_icm20x
+import adafruit_icm20x
 # IMU = adafruit_icm20x.ICM20948(i2c)
 
 # Connect ESC
@@ -26,11 +26,13 @@ max_CCW_ESC_inp = 1132
 max_CW_ESC_inp = 1832
 
 # Define ramp parameters
-sleep_time = 2.0
-delta = 50
+SLEEP_TIME = 2.0
+DELTA = 50
 
 # CCW drive function
-def HDD_ccw_drive(sleep_time, delta):
+def HDD_ccw_drive(sleep_time=SLEEP_TIME, delta=DELTA):
+    """
+    
     inp = neutral_ESC_inp
     [w_x0, w_y0, w_z0] = IMU.gyro
     while inp > max_CCW_ESC_inp:
@@ -44,9 +46,16 @@ def HDD_ccw_drive(sleep_time, delta):
     pi.set_servo_pulsewidth(ESC,neutral_ESC_inp)
     
     return [w_x0, w_y0, w_z0, w_xf, w_yf, w_zf]
+    """
+    
+    print("HDD Spin CCW!")
+    
+    return [-1.0, -2.0, -3.0, -1.0, -2.0, -3.0]
+    
 
 # CW drive function
-def HDD_cw_drive(sleep_time, delta):
+def HDD_cw_drive(sleep_time=SLEEP_TIME, delta=DELTA):
+    """
     inp = neutral_ESC_inp
     [w_x0, w_y0, w_z0] = IMU.gyro
     while inp < max_CW_ESC_inp:
@@ -60,9 +69,14 @@ def HDD_cw_drive(sleep_time, delta):
     pi.set_servo_pulsewidth(ESC,neutral_ESC_inp)
     
     return [w_x0, w_y0, w_z0, w_xf, w_yf, w_zf]
+    """
+    print("HDD Spin CW!")
+    return [1.0, 2.0, 3.0, 1.0, 2.0, 3.0]
     
 # HDD Stop Function
 def HDD_stop():
+    print("HDD Stop!")
+    
     pi.set_servo_pulsewidth(ESC,neutral_ESC_inp)
     i = 1
     while i < 11:
