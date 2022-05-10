@@ -14,7 +14,7 @@ class FSWTimer:
     def start(self):
         """ Starts a new timer"""
         if self.start_time is not None:
-            raise TimeError(f"Timer is not running, please instantiate the timer")
+            raise FSWTimeError("Timer is not running, please instantiate the timer")
 
         self.start_time = time.perf_counter()
 
@@ -24,7 +24,7 @@ class FSWTimer:
     def stop(self): 
         """Cease the timer and report how much time has elapssed"""
         if self.start_time is None:
-            raise FSWTimeError(f"Timer was not initialized, please start the timer first!")
+            raise FSWTimeError("Timer was not initialized, please start the timer first!")
     
         elapsed_time =  time.perf_counter() - self.start_time
         self.start_time = 0
