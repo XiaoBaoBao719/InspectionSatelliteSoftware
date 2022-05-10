@@ -5,7 +5,7 @@ import time
 from ctypes import *
 cameraNum = 2
 #load arducam shared object file
-arducam_vcm= CDLL('./lib/libarducam_vcm.so')
+arducam_vcm = CDLL('./lib/libarducam_vcm.so')
 try:
 	import picamera
 	from picamera.array import PiRGBArray
@@ -52,7 +52,7 @@ if __name__ == "__main__":
   last_value = 0.0
   dec_count = 0
   focal_distance = 10
-	#choose cmaera A
+	#choose camera A
   arducam_vcm.choose_channel(0)
   while True:
 	    #Adjust focus
