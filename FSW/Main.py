@@ -156,11 +156,6 @@ burnwireFired = False
 global_timer = None
 
 
-# def startTimer(timer):
-#    """ TODO: initializes the global timer var as a seperate thread process
-#    """
-#     timer.start()
-
 def clamp(n, minn, maxn):
     """ Helper function
     """
@@ -381,7 +376,9 @@ def writeData(results):
     True if the data packet was sent without any issues
     False if otherwise
     """
-    buffer = str(results)
+    buffer_as_bytes = str.encode("Test Data", 'utf-8')
+    # buffer_as_bytes = str.encode(results)
+    print(type(buffer_as_bytes)) # check that it is a byte representation
     
     with serial.Serial() as ser:
         ser.port=SERIAL_PORT
@@ -394,7 +391,7 @@ def writeData(results):
 
         try:
             print("Writing results")
-            ser.write(buffer)
+            ser.write(buffer_as_bytes)
             print("Packet sent")
             time.sleep(1) # Wait one second for packet to send
             return True
