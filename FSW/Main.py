@@ -21,7 +21,7 @@ TODO: CREATE A PINOUT TXT OR JSON THAT SETS ALL OF THE PIN LOCATIONS
 
 """
 # Use the correct version of Python...
-#!/usr/bin/Python3
+#!/usr/bin/env Python3
 
 # =====================================
 # ==         CONFIGURATION           ==
@@ -113,6 +113,15 @@ global_timer = None
 HDD = 0
 HIO = 1
 
+LED = 14 # GPIO14 
+
+def flashled(num):
+    for i in range(num):
+        GPIO.output(LED, GPIO.HIGH)
+        sleep(1)
+    GPIO.output(LED, GPIO.LOW)
+    pass
+
 def clamp(n, minn, maxn):
     """ Helper function
     """
@@ -130,6 +139,8 @@ def initializeComputer():
     print("\n ++++++++ STARTING FLIGHT COMPUTER +++++++++++")
     GPIO.setmode(GPIO.BCM)
     GPIO.setwarnings(False)
+    GPIO.setup(LED,GPIO.OUT)
+    
 
 def getCPUTemp():
     """ Checks the SoC temperature in the core processor
@@ -349,6 +360,7 @@ def setupBurnwire(wire, deployed):
 def doHDD():
     # [w_x0, w_y0, w_z0, w_xf, w_yf, w_zf] = HDD_ccw_drive(sleep_time, delta)   uncomment when testing!
     # HDD_stop()
+    flashled(5)
     [w_x0, w_y0, w_z0, w_xf, w_yf, w_zf] = [-1.0, -2.0, -3.0, -1.0, -2.0, -3.0]
     print("Initial Gyro X:%.2f, Y: %.2f, Z: %.2f rads/s" % (w_x0, w_y0, w_z0))
     print("Final Gyro X:%.2f, Y: %.2f, Z: %.2f rads/s" % (w_xf, w_yf, w_zf))
@@ -364,6 +376,7 @@ def setup():
     
     # INITIALIZE F/C GPIO
     initializeComputer()
+    flashled(10)
 
     # Attempt to read and increment the boot counter
     boot_counter_str = readStateVariable(STATE_VAR_PATH, "BOOT_COUNTER")
@@ -428,11 +441,13 @@ def setup():
     writeStateVariable(STATE_VAR_PATH, "HARDWARE_ERROR", system_error)
 
     if system_error:
+        flashled(10)
         print("Anomally detected! Rebooting...")
         sleep(5)
         reboot()
     
     print("Health Check Complete. \n Standing by")
+    flashled(20)
     sleep(5)
     
 TOTAL_HDD_EXPERIMENTS = 2 # number experiments to perform
@@ -441,6 +456,7 @@ TIME_PER_HDD = 10 # 5 mins between each experiment
 def HDD_Main():
     # Start HDD Experiment
     print("Initiating HDD experiment...")
+    flashled(10)
     sleep(5)
     HDD_results = []
     exp_num = 1
@@ -487,6 +503,7 @@ MAX_IMGS = 2
 model_filename = os.getcwd()+'/handrail_output.pth'    #located in output.zip folder
 
 def HIO_Main():
+    flashled(30)
     # If deployed is FALSE, create a Burnwire() object and invoke the burn function
     # Runs .burn() for both pins at 5000 Hz for 1 second
     read_out = readStateVariable(STATE_VAR_PATH, "DEPLOYED") # Check for the state variable for DEPLOYED
@@ -595,7 +612,7 @@ if (__name__ == "__main__"):
     # Run system setup
     setup()
 
-    HDD_Main()
+    # HDD_Main()
     sleep(10) # Wait 10 minutes for steady-state
     HIO_Main()
     
