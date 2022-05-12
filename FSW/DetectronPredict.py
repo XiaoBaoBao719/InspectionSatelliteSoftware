@@ -10,6 +10,7 @@ Last Edited: 5/1/22, Xiao-Bao Bao
 # Functions that need library: get_cfg(), DefaultPredictor(), cv2.imread()
 
 import os
+from tabulate import tabulate
 from textwrap import indent
 from detectron2 import model_zoo
 from detectron2.config import get_cfg
@@ -58,6 +59,71 @@ def Inference_Mask(im, inference_threshold):
   
   return det_dict
 
+def displayResults(detections,showImage=None):
+  """
+  Parameters
+  -----------
+  detections : dict {}
+      dictionary of results from det2 predict()
+  """
+  results = [value for key, value in detections.items()]
+  print(results)
+    
+  ### DEBUGGING: TABULATED DETECTION RESULTS ###
+  spc1 = "                 "
+  spc2 = "              "
+
+  # Includes IOU and TP?
+  headers = ["Detection","Bbox"+spc1+spc1+spc1+"Conf"+ spc2+"IOU"+spc2+"TP?"] 
+  table = tabulate(detections.items(),headers = headers)
+  print(table)
+
+  if showImage is not None:
+      annoted = showImage
+      for i in range(len(detections.items())):
+        
+        item = detections[i]
+        bbox = item["bbox"]
+        conf = item["conf"]
+        # print("bbox yo", bbox)
+        # print("conf ay", conf)
+
+        pt1 = bbox[:2]
+        pt1 = (int(pt1[0]), int(pt1[1]))
+        pt2 = bbox[2:]
+        pt2 = (int(pt2[0]), int(pt2[1]))
+
+        print("pt1", pt1)
+        print("pt2", pt2)
+
+        # pt1 = (371, 312)
+        # pt2 = (1500, 600)
+
+        cv2.rectangle(annoted,pt1,pt2,(0,255,0),3)
+        # print(bbox)
+
+        cv2.imshow("annoted", annoted)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+def getBestResults(detections):
+    bestBox = []
+    bestConf = 0
+
+    for n in range(len(detections.items())):
+        item = detections[n]
+        bbox = item["bbox"]
+        conf = item["conf"]
+
+        if conf > bestConf:
+            bestConf = conf
+            bestBox = bbox
+    
+    if bestBox is not None:
+        return bestBox, bestConf
+    
+    return [0,0]
+
 
 # ### FOR DEBUGGING PURPOSES ###
 
@@ -66,18 +132,10 @@ im = cv2.imread(os.getcwd()+"/FSW/sample_img_2.jpg")     #located in same direct
 inference_threshold = 0.02
 
 det_dict = Inference_Mask(im, inference_threshold)
+displayResults(det_dict, im)
 
-# [print(key,':',value) for key, value in det_dict.items()]
-results = [value for key, value in det_dict.items()]
-print(results)
-  
-### DEBUGGING: TABULATED DETECTION RESULTS ###
-from tabulate import tabulate
-
-spc1 = "                 "
-spc2 = "              "
-
-# Includes IOU and TP?
-headers = ["Detection","Bbox"+spc1+spc1+spc1+"Conf"+ spc2+"IOU"+spc2+"TP?"] 
-table = tabulate(det_dict.items(),headers = headers)
-print(table)
+print(getBestResults(det_dict))
+# cv2.rectangle(im, (50, 50), (100, 100), (0,255,0), 3)
+# cv2.imshow("test", im)
+# cv2.waitKey(0)
+# cv2.destroyAllWindows()

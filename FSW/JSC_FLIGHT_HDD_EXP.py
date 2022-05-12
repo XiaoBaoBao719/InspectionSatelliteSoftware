@@ -49,10 +49,8 @@ def HDD_ccw_drive(sleep_time=SLEEP_TIME, delta=DELTA):
     """
     
     print("HDD Spin CCW!")
-    
     return [-1.0, -2.0, -3.0, -1.0, -2.0, -3.0]
     
-
 # CW drive function
 def HDD_cw_drive(sleep_time=SLEEP_TIME, delta=DELTA):
     """
@@ -73,6 +71,13 @@ def HDD_cw_drive(sleep_time=SLEEP_TIME, delta=DELTA):
     print("HDD Spin CW!")
     return [1.0, 2.0, 3.0, 1.0, 2.0, 3.0]
     
+def HDD_get_state():
+    # [w_x, w_y, w_z] = IMU.gyro
+    # return [w_x, w_y, w_z]
+
+    print("HDD state: ")
+    return [1.0, 2.0, 3.0, 1.0, 2.0, 3.0]
+
 # HDD Stop Function
 def HDD_stop():
     print("HDD Stop!")

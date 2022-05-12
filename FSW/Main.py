@@ -28,16 +28,17 @@ TODO: CREATE A PINOUT TXT OR JSON THAT SETS ALL OF THE PIN LOCATIONS
 # =====================================
 import os
 import time
-from time import sleep
 import sys
 import numpy as np
 import RPi.GPIO as GPIO
 import serial
-# import threading
 import json
 import cv2 as cv
 import subprocess
 from PIL import Image
+
+from time import sleep
+from tabulate import tabulate
 
 # Import JSC Payload and packages
 from JSC_FLIGHT_HDD_EXP import HDD_ccw_drive, HDD_cw_drive, HDD_stop
@@ -50,10 +51,15 @@ from Burnwire import Burnwire
 sys.path.insert(0, os.getcwd() + '/FSW')
 sys.path.insert(0, os.getcwd() + '/Detectron2')
 sys.path.insert(0, os.getcwd() + 'YOLOv5')
-from DetectronPredict import Inference_Mask
+from DetectronPredict import Inference_Mask, displayResults, getBestResults
 #from YoloPredictor import run
-
 from FSWTimer import *
+
+from char2bits import char2bits
+from bits2char import bits2char
+from read_data_string import read_data_string
+from write_data_string import write_data_string
+
 
 # =====================================
 # ==         DEPLOYMENT VARS         ==
@@ -72,14 +78,6 @@ SERIAL_PORT = PL011
 # =====================================
 # ==           CV VARS               ==
 # =====================================
-# FILE = Path(__file__).resolve()
-# ROOT = FILE.parents[0]  # YOLOv5 root directory
-
-# Detectron2_WEIGHTS = ROOT / 'detmodel.pt'
-# Detectron2_SOURCE = ROOT / 'data/images'
-# YOLO_WEIGHTS = ROOT / 'yolov5s.pt'
-# YOLO_SOURCE = ROOT / 'data/images'
-
 EXPOSURE_TIME = 8000 # ms
 DELAY = 3000 # ms
 GAIN = 10
@@ -112,6 +110,9 @@ deployed = False
 burnwireFired = False
 global_timer = None
 
+HDD = 0
+HIO = 1
+
 def clamp(n, minn, maxn):
     """ Helper function
     """
@@ -129,67 +130,6 @@ def initializeComputer():
     print("\n ++++++++ STARTING FLIGHT COMPUTER +++++++++++")
     GPIO.setmode(GPIO.BCM)
     GPIO.setwarnings(False)
-
-# This whole function was a terrible idea. You can do better Xiao!
-# def serialSetup():
-#     """ 
-#     Parameters
-#     ----------
-#     ser: Serial
-#         Serial object handles UART comms protocol with S/C
-#     
-#     Return
-#     ---------
-#         Serial object if successful connection and setup established, 
-#         otherwise, return None
-#     """
-#     
-#     if ser == None:
-#         # Initialize Serial Port
-#         print("\nAttemtping to open the serial port...")
-#         ser = ""
-#         try:
-#             ser = serial.Serial(port=SERIAL_PORT, baudrate=BAUDRATE,
-#                                 parity=serial.PARITY_ODD,timeout=SYS_TIMEOUT,
-#                                 stopbits=serial.STOPBITS_ONE,bytesize=serial.EIGHTBITS)
-#             print(ser.name)
-#             ser.write(b'CV_Payload_Active')
-#             ser.open()
-#             print("Serial connection successful! ", ser.name)
-#         except SerialException as e:
-#             print("Issue with setting up UART connection!")
-#             print(e)
-#             ser = None
-#     #counter = 0
-#     if ser.is_open:
-#         print("Serial port already open.")
-#         print(ser.name)
-#         return ser
-#     
-#     if ser is not None:
-#         return ser
-# 
-#     return None
-
-# def verifySystem():
-#     """ Performs system diagnotic checks on power, temperature, lighting, and comms
-#     Arguments
-#     ----------
-#     serial: Serial
-#         Serial object returns the status of the serial connection to the S/C FC, can ping
-#         for timeout and data packet state
-#     Returns
-#     ---------
-#     False if any system related check function either also returns false or times out
-#     True if all systems check out to true
-#     """
-#     # TODO: Perform RAM check, VRAM check, Power check, Lighting check, Camera check
-#     if not serial.is_open:
-#         return False
-#     if not checkTempCPU():
-#         return False
-#     else:
-#         return True
 
 def getCPUTemp():
     """ Checks the SoC temperature in the core processor
@@ -503,30 +443,45 @@ def HDD_Main():
     print("Initiating HDD experiment...")
     sleep(5)
     HDD_results = []
-    num_experiments = 1
+    exp_num = 1
     HDD_timer = FSWTimer()
     HDD_timer.start()
+
+    last_results = []
+    curr_results = []
+    hdd_bytes = ""
     
-    while num_experiments <= TOTAL_HDD_EXPERIMENTS:
+    while exp_num <= TOTAL_HDD_EXPERIMENTS:
         if (HDD_timer.elapsed_time() % TIME_PER_HDD >= 0):
-            print("Running HDD experiment: ", num_experiments)
+            print("Running HDD experiment: ", exp_num)
             print(f"Elapsed time: {HDD_timer.elapsed_time():0.4f} seconds")
-            experiment_run = doHDD()
-            HDD_results.append(experiment_run)
+            curr_results = doHDD()
+            HDD_results.append(curr_results)
             
             print("Run successful!")
             # sleep(TIME_PER_HDD) # Wait for system to settle after 5 mins
+            wxa = curr_results[0]
+            wxc = curr_results[1]
+            wya = curr_results[2]
+            wyc = curr_results[3]
+            wza = curr_results[4]
+            wzc = curr_results[5]
+
+            # Write HDD results to UCD Data buffer
+            print("Writing HDD data to buffer...")
+            hdd_bytes = write_data_string(TYPE=HDD, XN=exp_num, WXA=wxa, WXC=wxc, 
+                                            WYA=wya, WYC=wyc, WZA=wza, WZC=wzc,
+                                            TEMP=getCPUTemp())
+            writeData(hdd_bytes)
 
         num_experiments += 1
     
     print(f"Elapsed HDD time: {HDD_timer.elapsed_time():0.4f} seconds")
     HDD_timer.stop()
-    # Write HDD results to UCD Data buffer
-    print("Writing HDD data to buffer...")
-    writeData(HDD_results)
+    
     pass
 
-from tabulate import tabulate
+
 TIME_PER_HIO = 5*60 # minutes
 MAX_IMGS = 2
 model_filename = os.getcwd()+'/handrail_output.pth'    #located in output.zip folder
@@ -568,9 +523,9 @@ def HIO_Main():
     HIO_timer = FSWTimer()
     HIO_timer.start()
     
-    number_imgs_captured = 0
+    num_imgs = 0
 
-    while number_imgs_captured <= MAX_IMGS-1:
+    while num_imgs <= MAX_IMGS-1:
         # if the elapsed time on the timer thread is a multiple of the timer interval 
         # threshold, perform data aquisition
         if (HIO_timer.elapsed_time() % TIME_PER_HIO >= 0):
@@ -589,24 +544,40 @@ def HIO_Main():
                 cv.waitKey(0)
                 cv.destroyAllWindows()
 
-                # Perform model inference on the returned path from the model
-                # DetectronPredictor.detect(image_path)
-                
+                # Perform model inference on the returned path from the model              
                 # im = cv2.imread(os.getcwd()+"/sample_img.jpg")     #located in same directory as inference_mask.py
                 inference_threshold = 0.02
                 det_dict = Inference_Mask(img, inference_threshold)
 
-                ### TABULATED DETECTION RESULTS ###
-                spc1 = "                 "
-                spc2 = "              "
+                ### DEBUGGING TABULATED DETECTION RESULTS ###
+                displayResults(det_dict)
 
-                # Includes IOU and TP?
-                headers = ["Detection","Bbox"+spc1+spc1+spc1+"Conf"+ spc2+"IOU"+spc2+"TP?"] 
-                table = tabulate(det_dict.items(),headers = headers)
-                print(table)
+                _bb, _conf = getBestResults(det_dict)
                 
-                results_str = str(det_dict)
-                writeData(results_str)
+                if _bb is not None:
+                    x1 = _bb[0][1]
+                    y1 = _bb[0][0]
+                    x2 = _bb[1][1]
+                    y2 = _bb[1][0]
+                    yd = 1
+                    cy = _conf
+
+                else:
+                    x1 = 0
+                    y1 = 0
+                    x2 = 0
+                    y2 = 0
+                    yd = 0
+                    cy = 0  
+
+                
+                # Encode YOLO results into bitstream
+                data_bytes = write_data_string(TYPE=HIO, PN=num_imgs, YD=yd, 
+                                                YBBX1=x1, YBBY1=y1, YBBX2=x2, YBBY2=y2, 
+                                                CY=cy, PIC=img_capture, TEMP=getCPUTemp())
+
+                # Write bitstream to serial comm
+                writeData(data_bytes)
                 
                 
                 
