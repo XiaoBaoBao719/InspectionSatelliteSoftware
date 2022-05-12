@@ -17,4 +17,4 @@ if __name__ == "__main__":
     
     arducam_vcm.vcm_write(focus_val)
     
-    camera.capture("test.jpg")
+    camera.capture("test_2.jpg")

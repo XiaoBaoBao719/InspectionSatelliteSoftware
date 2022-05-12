@@ -39,7 +39,6 @@ if __name__ == "__main__":
     arducam_vcm.vcm_init()
     #open camera
     camera = picamera.PiCamera()
-    
     #open camera preview
     camera.start_preview()
     #set camera resolution to 640x480(Small resolution for faster speeds.)
@@ -56,7 +55,6 @@ if __name__ == "__main__":
     # camera.awb_mode = 'off'
     # camera.awb_gains = g
 
-
     print("Start focusing")
     
     max_index = 10
@@ -64,9 +62,6 @@ if __name__ == "__main__":
     last_value = 0.0
     dec_count = 0
     focal_distance = 10
-
-
-        
 
     while True:
         #Adjust focus
@@ -96,13 +91,15 @@ if __name__ == "__main__":
     #Adjust focus to the best
     focusing(max_index)
     time.sleep(10)
+    #set camera rotation
+    camera.rotation = 180
     #set camera resolution to 2592x1944
     camera.resolution = (1920,1080)
     #save image to file.
     camera.capture("test.jpg")
     print("max index = %d,max value = %lf" % (max_index,max_value))
     #while True:
-    #	time.sleep(1)
+    #time.sleep(1)
         
     camera.stop_preview()
     camera.close()

@@ -3,7 +3,7 @@ import os
 import time
 import sys
 
-import thread
+import _thread as thread
 from ctypes import *
 keyboard = CDLL('./lib/libarducam_keyboard.so')
 arducam_vcm =CDLL('./lib/libarducam_vcm.so')
@@ -23,6 +23,9 @@ if __name__ == "__main__":
     #preview=camera.start_preview()
     #set windows size
     #preview.window=(0,0,800,600)
+    arducam_vcm.vcm_write(focus_val)
+    
+    """
     print("Please press up and down to adjust focus.")
     while True:
         keyVal = keyboard.processKeyEvent()
@@ -42,4 +45,4 @@ if __name__ == "__main__":
             print(focus_val)
             arducam_vcm.vcm_write(focus_val)
 
-
+    """
