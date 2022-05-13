@@ -1,4 +1,4 @@
-#test rx_ucd_data
+#test rx_ucd_data, send data from the Py
 
 import numpy as np
 import json
@@ -8,7 +8,7 @@ from rx_ucd_data import rx_ucd_data
 
 #create serial object
 ser = serial.Serial(
-    port='/dev/ttyS4',  #port on UP board, pins # 8 (TX) and 10 (RX)
+    port='/dev/ttyAMA0',  #port on Py board, pins # 8 (TX) and 10 (RX)
     baudrate=115200,
     parity=serial.PARITY_NONE,
     stopbits=serial.STOPBITS_ONE,
@@ -36,7 +36,7 @@ data.append("ppppppppppppppp")
 
 for d in data:
         #message = d
-        ser.write(d)
+        ser.write(d.encode('utf-8'))
         #if message: 
         print(d)  
         #rx_ucd_data(message)

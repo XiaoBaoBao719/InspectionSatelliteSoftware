@@ -8,7 +8,7 @@ from rx_ucd_data import rx_ucd_data
 
 #create serial object
 ser = serial.Serial(
-    port='/dev/ttyS4', #port on RPi, pins # 8 (TX) and 10 (RX). Don't forget to connect GND
+    port='/dev/ttyS4', #port on UP board, pins # 8 (TX) and 10 (RX). Don't forget to connect GND
     baudrate=115200,
     parity=serial.PARITY_NONE,
     stopbits=serial.STOPBITS_ONE,
@@ -23,4 +23,4 @@ while 1:
         message = ser.read(15)
         #if message: 
         print(message)  
-        rx_ucd_data(message)
+        rx_ucd_data(message.decode('utf-8'))
