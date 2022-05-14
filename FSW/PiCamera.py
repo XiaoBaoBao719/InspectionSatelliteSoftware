@@ -7,11 +7,14 @@ import shutil
 from ctypes import *
 # load arducam shared object file
 arducam_vcm= CDLL('./lib/libarducam_vcm.so')
+
 try:
     import picamera
     from picamera.array import PiRGBArray
+    print("goood")
 except:
-    sys.exit(0)
+    print("oops")
+    # sys.exit(0)
     
 def run_camera():
     # set desired focus value from 0-1023
@@ -49,10 +52,13 @@ def run_camera():
     end_path = os.path.abspath("Captured_Images")
     shutil.move(orig_path, end_path)
     entire_path = end_path + "/" + image_name
+    
+    print("done")
     return entire_path
 
 # For debugging purposes
+"""
 if __name__ == "__main__":
     run_camera()
-    
+"""
     

@@ -41,7 +41,7 @@ from time import sleep
 from tabulate import tabulate
 
 # Import JSC Payload and packages
-from JSC_FLIGHT_HDD_EXP import HDD_ccw_drive, HDD_cw_drive, HDD_stop
+from JSC_FLIGHT_HDD_EXP import HDD_ccw_drive, HDD_cw_drive, HDD_stop, HDD_print
 from serial.serialutil import SerialException
 
 from Burnwire import Burnwire
@@ -359,13 +359,14 @@ def setupBurnwire(wire, deployed):
 """
 
 def doHDD():
-    # [w_x0, w_y0, w_z0, w_xf, w_yf, w_zf] = HDD_ccw_drive(sleep_time, delta)   uncomment when testing!
-    # HDD_stop()
+    # [w_x0, w_y0, w_z0, w_x1, w_y1, w_z1, w_xf, w_yf, w_zf, HDD_current_f] = HDD_ccw_drive(sleep_time, delta)
+    # [w_x0, w_y0, w_z0, w_x1, w_y1, w_z1, w_xf, w_yf, w_zf, HDD_current_f] = HDD_cw_drive(sleep_time, delta)
+    # HDD_stop()   uncomment when testing!
     flashled(5)
-    [w_x0, w_y0, w_z0, w_xf, w_yf, w_zf] = [-1.0, -2.0, -3.0, -1.0, -2.0, -3.0]
-    print("Initial Gyro X:%.2f, Y: %.2f, Z: %.2f rads/s" % (w_x0, w_y0, w_z0))
-    print("Final Gyro X:%.2f, Y: %.2f, Z: %.2f rads/s" % (w_xf, w_yf, w_zf))
-    return [w_x0, w_y0, w_z0, w_xf, w_yf, w_zf]
+    # [w_x0, w_y0, w_z0, w_x1, w_y1, w_z1, w_xf, w_yf, w_zf, HDD_current_f] = [-1.0, -2.0, -3.0, 1.0, 2.0, 3.0, -1.0, -2.0, -3.0, 0.05]
+    result = [-1.0, -2.0, -3.0, 1.0, 2.0, 3.0, -1.0, -2.0, -3.0, 0.05]
+    HDD_print(result)
+    return result
 
 def setup():
     """ Performs initial bootup sequence once and deploys the payload mechanism
@@ -478,17 +479,21 @@ def HDD_Main():
             print("Run successful!")
             # sleep(TIME_PER_HDD) # Wait for system to settle after 5 mins
             wxa = curr_results[0]
-            wxc = curr_results[1]
-            wya = curr_results[2]
-            wyc = curr_results[3]
-            wza = curr_results[4]
-            wzc = curr_results[5]
+            wxb = curr_results[1]
+            wxc = curr_results[2]
+            wya = curr_results[3]
+            wyb = curr_results[4]
+            wyc = curr_results[5]
+            wza = curr_results[6]
+            wzb = curr_results[7]
+            wzc = curr_results[8]
+            cd = curr_results[9]
 
             # Write HDD results to UCD Data buffer
             print("Writing HDD data to buffer...")
-            hdd_bytes = write_data_string(TYPE=HDD, XN=num_runs, WXA=wxa, WXC=wxc, 
-                                            WYA=wya, WYC=wyc, WZA=wza, WZC=wzc,
-                                            TEMP=getCPUTemp())
+            hdd_bytes = write_data_string(TYPE=HDD, XN=num_runs, WXA=wxa, WXB=wxb, WXC=wxc, 
+                                            WYA=wya, WYB=wyb, WYC=wyc, WZA=wza, WZB=wzb, WZC=wzc,
+                                            CD=cd, TEMP=getCPUTemp())
             writeData(hdd_bytes)
         # Update
         num_runs += 1
@@ -527,7 +532,7 @@ def HIO_Setup():
         burnwire.getBurnwireStatus()
         sleep(2)
         burn_channels = [1, 2]
-<<<<<<< HEAD
+
         # Write to state variable in case of burnwire forced reboot event
         writeStateVariable(STATE_VAR_PATH, "BURNWIRE_FIRED", True)
         writeStateVariable(STATE_VAR_PATH, "DEPLOYED", True)
@@ -545,24 +550,6 @@ def HIO_Setup():
     getSpacecraftState(STATE_VAR_PATH)
 
 def HIO_Main():
-=======
-
-        # Write burn status
-        writeStateVariable(STATE_VAR_PATH, "BURNWIRE_FIRED", True)
-        writeStateVariable(STATE_VAR_PATH, "DEPLOYED", True)
-
-        # Activate burn
-        burnwire.burn(burn_channels)
-
-        # if burn_result:
-        #     print("Burn successful!")
-        #     # Set DEPLOYED to TRUE
-        #     writeStateVariable(STATE_VAR_PATH, "BURNWIRE_FIRED", True)
-        #     writeStateVariable(STATE_VAR_PATH, "DEPLOYED", True)
-            
-        # else:
-        #     print("Burn attempt failed!")
->>>>>>> a86a34f3d905be6b9500da6a9bc320ce548e8a66
     
     # image_path = picam.getCapturePath()
     
@@ -641,11 +628,11 @@ if (__name__ == "__main__"):
     # Run system setup
     setup()
 
-    #HDD_Main()
+    HDD_Main()
     sleep(5) # Wait 10 minutes for steady-state
     #HIO_Setup()
     sleep(5)
-    HIO_Main()
+    #HIO_Main()
     
     # Clean up system
     #ser.close()
