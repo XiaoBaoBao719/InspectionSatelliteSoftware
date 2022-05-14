@@ -45,7 +45,7 @@ from JSC_FLIGHT_HDD_EXP import HDD_ccw_drive, HDD_cw_drive, HDD_stop
 from serial.serialutil import SerialException
 
 from Burnwire import Burnwire
-# from Camera import Camera
+from PiCamera import run_camera
 
 # Model Paths
 sys.path.insert(0, os.getcwd() + '/FSW')
@@ -527,6 +527,7 @@ def HIO_Setup():
         burnwire.getBurnwireStatus()
         sleep(2)
         burn_channels = [1, 2]
+<<<<<<< HEAD
         # Write to state variable in case of burnwire forced reboot event
         writeStateVariable(STATE_VAR_PATH, "BURNWIRE_FIRED", True)
         writeStateVariable(STATE_VAR_PATH, "DEPLOYED", True)
@@ -544,6 +545,24 @@ def HIO_Setup():
     getSpacecraftState(STATE_VAR_PATH)
 
 def HIO_Main():
+=======
+
+        # Write burn status
+        writeStateVariable(STATE_VAR_PATH, "BURNWIRE_FIRED", True)
+        writeStateVariable(STATE_VAR_PATH, "DEPLOYED", True)
+
+        # Activate burn
+        burnwire.burn(burn_channels)
+
+        # if burn_result:
+        #     print("Burn successful!")
+        #     # Set DEPLOYED to TRUE
+        #     writeStateVariable(STATE_VAR_PATH, "BURNWIRE_FIRED", True)
+        #     writeStateVariable(STATE_VAR_PATH, "DEPLOYED", True)
+            
+        # else:
+        #     print("Burn attempt failed!")
+>>>>>>> a86a34f3d905be6b9500da6a9bc320ce548e8a66
     
     # image_path = picam.getCapturePath()
     
