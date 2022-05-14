@@ -325,6 +325,7 @@ def getSpacecraftState(file):
     try:
         with open(file, 'r') as json_out:
             parsed = json.loads(json_out.read()) # gets a string, converts to dict
+            print("------------- S/C State ---------------")
             print(json.dumps(parsed, indent=4, sort_keys=False))
     except Exception as e:
         print("Error reading the state variable file")
@@ -376,7 +377,7 @@ def setup():
     
     # INITIALIZE F/C GPIO
     initializeComputer()
-    flashled(10)
+    flashled(5)
 
     # Attempt to read and increment the boot counter
     boot_counter_str = readStateVariable(STATE_VAR_PATH, "BOOT_COUNTER")
@@ -411,7 +412,7 @@ def setup():
     # Debugging statement
     getSpacecraftState(STATE_VAR_PATH)
     
-    print("+++++++++ F/C HEALTH CHECK +++++++++++++++")
+    print("+++++++++++++ F/C HEALTH CHECK +++++++++++++++")
     sleep(2)
     # Assume no system errors yet
     system_error = False
@@ -447,7 +448,7 @@ def setup():
         reboot()
     
     print("Health Check Complete. \n Standing by")
-    flashled(20)
+    #flashled(20)
     sleep(5)
     
 TOTAL_HDD_EXPERIMENTS = 2 # number experiments to perform
@@ -456,20 +457,20 @@ TIME_PER_HDD = 10 # 5 mins between each experiment
 def HDD_Main():
     # Start HDD Experiment
     print("Initiating HDD experiment...")
-    flashled(10)
+    #flashled(10)
     sleep(5)
     HDD_results = []
-    exp_num = 1
     HDD_timer = FSWTimer()
     HDD_timer.start()
 
     last_results = []
     curr_results = []
+    num_runs = 0
     hdd_bytes = ""
     
-    while exp_num <= TOTAL_HDD_EXPERIMENTS:
+    while num_runs <= TOTAL_HDD_EXPERIMENTS:
         if (HDD_timer.elapsed_time() % TIME_PER_HDD >= 0):
-            print("Running HDD experiment: ", exp_num)
+            print("Running HDD experiment: ", num_runs)
             print(f"Elapsed time: {HDD_timer.elapsed_time():0.4f} seconds")
             curr_results = doHDD()
             HDD_results.append(curr_results)
@@ -485,13 +486,13 @@ def HDD_Main():
 
             # Write HDD results to UCD Data buffer
             print("Writing HDD data to buffer...")
-            hdd_bytes = write_data_string(TYPE=HDD, XN=exp_num, WXA=wxa, WXC=wxc, 
+            hdd_bytes = write_data_string(TYPE=HDD, XN=num_runs, WXA=wxa, WXC=wxc, 
                                             WYA=wya, WYC=wyc, WZA=wza, WZC=wzc,
                                             TEMP=getCPUTemp())
             writeData(hdd_bytes)
-
-        num_experiments += 1
-    
+        # Update
+        num_runs += 1
+        
     print(f"Elapsed HDD time: {HDD_timer.elapsed_time():0.4f} seconds")
     HDD_timer.stop()
     
@@ -499,41 +500,52 @@ def HDD_Main():
 
 
 TIME_PER_HIO = 5*60 # minutes
-MAX_IMGS = 2
+MAX_IMGS = 1
+INFERENCE_THRESHOLD = 0.4
 model_filename = os.getcwd()+'/handrail_output.pth'    #located in output.zip folder
 
-def HIO_Main():
-    flashled(30)
+def HIO_Setup():
+    getSpacecraftState(STATE_VAR_PATH)
     # If deployed is FALSE, create a Burnwire() object and invoke the burn function
     # Runs .burn() for both pins at 5000 Hz for 1 second
-    read_out = readStateVariable(STATE_VAR_PATH, "DEPLOYED") # Check for the state variable for DEPLOYED
+    read_out = readStateVariable(STATE_VAR_PATH, "BURNWIRE_FIRED") # Check for the state variable for DEPLOYED
+    
+    print(read_out)
+    
     try:
-        deployed = read_out[0] # Get the state variable for Deployed
+        burn_fired = read_out[0] # Get the state variable for Deployed
     except TypeError as e:
         print("ISSUE WITH READING THE STATE VARIABLE: DEPLOYED")
         print(e)
     
     print("Checking deployed state: ", deployed)
+    print("burnwire fired? ", type(burn_fired))
     
-    if deployed == False and burnwire is None:
+    if burn_fired == False:
         # SETUP AND DEPLOY BURNWIRE 
         burnwire = Burnwire(NUM_BURNWIRES)
         burnwire.getBurnwireStatus()
         sleep(2)
         burn_channels = [1, 2]
+        # Write to state variable in case of burnwire forced reboot event
+        writeStateVariable(STATE_VAR_PATH, "BURNWIRE_FIRED", True)
+        writeStateVariable(STATE_VAR_PATH, "DEPLOYED", True)
         burn_result = burnwire.burn(burn_channels)
+        
+        # If we successfully deployed nominally
+        """
         if burn_result:
             print("Burn successful!")
-            # Set DEPLOYED to TRUE
-            writeStateVariable(STATE_VAR_PATH, "BURNWIRE_FIRED", True)
-            writeStateVariable(STATE_VAR_PATH, "DEPLOYED", True)
-            
+            writeStateVariable(STATE_VAR_PATH, "DEPLOYED", burn_result)
         else:
             print("Burn attempt failed!")
+            writeStateVariable(STATE_VAR_PATH, "DEPLOYED", burn_result)
+        """
+    getSpacecraftState(STATE_VAR_PATH)
+
+def HIO_Main():
     
     # image_path = picam.getCapturePath()
-    
-    getSpacecraftState(STATE_VAR_PATH)
     
     print("Initiating HIO Experiment...")
     sleep(5)
@@ -555,30 +567,30 @@ def HIO_Main():
             img = cv.imread(img_capture)
             
             # Push results of data aquisition to a local folder and return the path
-            if img_capture is not None:
+            if img_capture is not img:
                 # Debugging: show the image
-                cv.imshow("debug img", img)
-                cv.waitKey(0)
-                cv.destroyAllWindows()
+                # cv.imshow("debug img", img)
+                # cv.waitKey(0)
+                # cv.destroyAllWindows()
 
                 # Perform model inference on the returned path from the model              
-                # im = cv2.imread(os.getcwd()+"/sample_img.jpg")     #located in same directory as inference_mask.py
-                inference_threshold = 0.02
-                det_dict = Inference_Mask(img, inference_threshold)
-
+                det_dict = Inference_Mask(img, INFERENCE_THRESHOLD)
+                
                 ### DEBUGGING TABULATED DETECTION RESULTS ###
                 displayResults(det_dict)
+                #det_dict = {0: {'bbox': [371.8197, 312.28333, 1514.4973, 665.65515], 'conf': 0.99867}, 1: {'bbox': [998.0732, 295.11374, 1515.9216, 582.3098], 'conf': 0.07558}}
 
                 _bb, _conf = getBestResults(det_dict)
                 
+                print(_bb)
+                
                 if _bb is not None:
-                    x1 = _bb[0][1]
-                    y1 = _bb[0][0]
-                    x2 = _bb[1][1]
-                    y2 = _bb[1][0]
+                    x1 = _bb[0]
+                    y1 = _bb[1]
+                    x2 = _bb[2]
+                    y2 = _bb[3]
                     yd = 1
                     cy = _conf
-
                 else:
                     x1 = 0
                     y1 = 0
@@ -587,33 +599,33 @@ def HIO_Main():
                     yd = 0
                     cy = 0  
 
-                
                 # Encode YOLO results into bitstream
                 data_bytes = write_data_string(TYPE=HIO, PN=num_imgs, YD=yd, 
                                                 YBBX1=x1, YBBY1=y1, YBBX2=x2, YBBY2=y2, 
-                                                CY=cy, PIC=img_capture, TEMP=getCPUTemp())
+                                                CY=cy, PIC=img, TEMP=getCPUTemp())
 
                 # Write bitstream to serial comm
                 writeData(data_bytes)
-                
-                
+                num_imgs += 1
+                writeStateVariable(STATE_VAR_PATH, "NUMBER_IMAGES", num_imgs)
                 
             elif img_capture is None:
                 print(" IMAGE NOT CAPTURED! Trying again...")
                 continue
-            
-            # writePayloadData(results)
-            number_imgs_captured += 1
+        sleep(1)
         
-  
+    # Check S/C state again   
+    getSpacecraftState(STATE_VAR_PATH)  
 
 if (__name__ == "__main__"):
 
     # Run system setup
     setup()
 
-    # HDD_Main()
-    sleep(10) # Wait 10 minutes for steady-state
+    #HDD_Main()
+    sleep(5) # Wait 10 minutes for steady-state
+    #HIO_Setup()
+    sleep(5)
     HIO_Main()
     
     # Clean up system

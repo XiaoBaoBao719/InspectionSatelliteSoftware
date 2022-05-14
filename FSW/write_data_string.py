@@ -2,7 +2,9 @@ import numpy as np
 import math
 from PIL import Image
 
-def write_data_string(TYPE,PN,YD,MD,YBBX1,YBBY1,YBBX2,YBBY2,MBBX1,MBBY1,MBBX2,MBBY2,CY,CM,PIC,XN,WXA,WXB,WXC,WYA,WYB,WYC,WZA,WZB,WZC,CD,TEMP):
+def write_data_string(TYPE=0,PN=0,YD=0,MD=0,YBBX1=0,YBBY1=0,YBBX2=0,YBBY2=0,
+                      MBBX1=0,MBBY1=0,MBBX2=0,MBBY2=0,CY=0,CM=0,PIC=np.array([[0]]),
+                      XN=0,WXA=0,WXB=0,WXC=0,WYA=0,WYB=0,WYC=0,WZA=0,WZB=0,WZC=0,CD=0,TEMP=0):
     """
     Return: bit string of the data (LSB first)
     Given:
@@ -34,7 +36,6 @@ def write_data_string(TYPE,PN,YD,MD,YBBX1,YBBY1,YBBX2,YBBY2,MBBX1,MBBY1,MBBX2,MB
     CD: current draw of the HDD, in mA
     TEMP: temperature reported by the flight computer, *C
 
-    sorry I'm so rusty in python
     """
     
     #generate bit string
@@ -95,7 +96,7 @@ def write_data_string(TYPE,PN,YD,MD,YBBX1,YBBY1,YBBX2,YBBY2,MBBX1,MBBY1,MBBX2,MB
             bits[11 + 4*i] = (bb[i] % 16)>7.5
 
         # confidence map is custom
-        CY = min(100, CY) 
+        CY = min(100, CY)
         CY = max(  0, CY)
         CM = min(100, CM) 
         CM = max(  0, CM)
@@ -212,6 +213,7 @@ def write_data_string(TYPE,PN,YD,MD,YBBX1,YBBY1,YBBX2,YBBY2,MBBX1,MBBY1,MBBX2,MB
 
         if WYA >= 25:
             bits[30:39] = np.ones((9,), dtype=int)
+             
         elif WYA <= -25:
             bits[30:39] = np.zeros((9,), dtype=int)
         else:
