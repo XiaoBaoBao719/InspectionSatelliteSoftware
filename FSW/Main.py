@@ -13,7 +13,7 @@ Primary functions include:
 3. Serial data packet comm to the S/C FC
 
 Req: 
-Python 3.8.10
+Python 3.7.3
 pySerial
 
 
@@ -46,7 +46,6 @@ from JSC_FLIGHT_HDD_EXP_V2 import HDD_ccw_drive, HDD_cw_drive, HDD_stop, HDD_pri
 from serial.serialutil import SerialException
 
 from Burnwire import Burnwire
-# from PiCamera import run_camera
 
 # Model Paths
 sys.path.insert(0, os.getcwd() + '/FSW')
@@ -73,9 +72,8 @@ NUM_BURNWIRES = 2
 BAUDRATE = 19200 #9600
 SYS_TIMEOUT = 1 # seconds
 mini_UART = '/dev/ttyS0'
-#PL011 = '/dev/ttyAMA0' 
-#SERIAL_PORT = PL011
-SERIAL_PORT = '/dev/ttyAMA0'
+#PL011 = '/dev/ttyAMA0'
+SERIAL_PORT = PL011
 
 # =====================================
 # ==           CV VARS               ==
@@ -96,6 +94,8 @@ burnwire = None
 # Ramp parameters
 HDD_SLEEP_TIME = 2.0
 HDD_DELTA = 50
+sleep_time = 2.0
+delta = 50
 
 # =====================================
 # ==        MISC GLOBAL VARS         ==
@@ -110,13 +110,12 @@ STATE_VAR_PATH = os.getcwd() + '/' + STATE_VAR_NAME
 init_file = ""
 deployed = False
 burnwireFired = False
-#hdd_done = False
 global_timer = None
 
-HDD = 0
-HIO = 1
+HDD = 0 # Used for writing bitstream to JSC
+HIO = 1 # Used for writing bitstream to JSC
 
-LED = 26 # GPIO14 
+LED = 26 # GPIO14, not used
 
 def flashled(num):
     for i in range(num):
@@ -159,7 +158,6 @@ def getCPUTemp():
     False if the processor temperature exceeds allowable (system will auto throttle)
     """
     output = subprocess.check_output(["vcgencmd", "measure_temp", "core"])
-    # print(type(output))
     temperature = float(output[5:9])
     print('Current CPU Temp is :', temperature, " *C")
     return temperature
@@ -180,34 +178,8 @@ def reboot():
         time_left = 10 - reboot_time.elapsed_time()
         print(f"Rebooting in: {time_left:0.2f}")
     sleep(0.1)
-    # system('sudo restart')
+    system('sudo restart')
     sys.exit(0)
-
-def getInference(source):
-    """ Calls CV models one after another, ensuring that light and dark lighting
-        conditons are also created for each CV model
-    TODO: Need to determine fault handling for if a model fails to perform successful inference
-          i.e. memory leaks or failed inference.
-    Arguments
-    ---------
-    source: string
-        File path to the image that we want to perform inference on
-
-    Returns
-    --------
-    resultsDF: string
-        Filepath to dataframe of output results
-    """
-
-    # detectron_results_lit = DetectronPredictor.detect(source)
-    # yolo_results_lit = YoloPredictor.detect(source)
-
-
-    # detectron_results_dark = DetectronPredictor.detect(source)
-    # yolo_results_dark = YoloPredictor.detect(source)
-
-    # return [{'Light': (detectron_results_lit, yolo_results_lit)} ,
-    #         {'Dark':(detectron_results_dark, yolo_results_dark)}]
     
 def writeData(results):
     """ Takes HIO or HDD results (character string) from the model and writes the data to the S/C FC
@@ -338,42 +310,15 @@ def getSpacecraftState(file):
         print("Error reading the state variable file")
         print("Exception: ", e)
         return ("NO_VALUE", False)
-    
-"""
-def setupBurnwire(wire, deployed):
-    # TODO: Check if the Burnwire object exists. Only want to create a single Burnwire object once!
-    if wire is None:
-        try:
-            wire = Burnwire(2, 5000, 0)
-        except RuntimeError as r:
-            print("Issue with creating Burnwire object!")
-            print("\n", r)
 
-        if deployed is False and deployed is not None:
-            # Trigger Burnwire
-            wire.getBurnwireStatus()
-            wire.burn(1, 100, 5000, 1) # Start pin 1 burn routine
-            wire.burn(2, 100, 5000, 1) # Start pin 2 burn routine
-            wire.destroy()
 
-            writeStateVariable(STATE_VAR_PATH, "BURNWIRE_FIRED", True) # Sets State Variable for burnwire fire event to TRUE
-        elif deployed is True:
-            # Move on to Define and Initialize Systems
-            # TODO DEFINE AND INITIALIZE SYSTEMS
-            pass
-    elif wire is not None:
-        print("Burnwire object already created!")
-"""
-
-sleep_time = 2.0
-delta = 50
 
 def doHDD(dir):
     if dir:
-        result = HDD_ccw_drive(sleep_time, delta)
+        result = HDD_ccw_drive(sleep_time=HDD_SLEEP_TIME, delta=HDD_DELTA)
     
     else:
-        result = HDD_cw_drive(sleep_time, delta)
+        result = HDD_cw_drive(sleep_time=HDD_SLEEP_TIME, delta=HDD_DELTA)
     sleep(5)
     HDD_stop()   # uncomment when testing!
     flashled(5)
@@ -416,11 +361,11 @@ def setup():
     writeStateVariable(STATE_VAR_PATH, "BOOT_COUNTER", current_num_boots)
 
     # Check if we already ran HDD experiment
-    read_out = readStateVariable(STATE_VAR_PATH, "HDD_COMPLETE") 
+    read_out = readStateVariable(STATE_VAR_PATH, "HDD_DONE") 
     try:
         hdd_done = read_out[0] # Get the state variable for Deployed
     except TypeError as e:
-        print("ISSUE WITH READING THE STATE VARIABLE: HDD_COMPLETE")
+        print("ISSUE WITH READING THE STATE VARIABLE: HDD_DONE")
         print(e)
 
     # Check if we already deployed
@@ -480,7 +425,7 @@ def setup():
         sleep(5)
         reboot()
     
-    print("Health Check Complete. \n Standing by")
+    print("Health Check Complete. \nStanding by...")
     #flashled(20)
     sleep(2)
     
@@ -542,7 +487,7 @@ def HDD_Main():
     print(f"Total Elapsed HDD time: {HDD_timer.elapsed_time():0.4f} seconds")
     HDD_timer.stop()
     hdd_done = True
-    writeStateVariable(STATE_VAR_PATH, "HDD_COMPLETE", True)
+    writeStateVariable(STATE_VAR_PATH, "HDD_DONE", True)
     
     pass
 
