@@ -12,7 +12,7 @@ ser = serial.Serial(
 )
         
 buffer = "heyo"
-dum_hdd_vals = str(36)
+dum_hdd_vals = str(420420420420420)
 
 while 1:
     # x = ser.write(dum_hdd_vals.encode('utf-8'))

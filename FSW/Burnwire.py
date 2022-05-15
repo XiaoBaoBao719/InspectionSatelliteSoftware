@@ -135,7 +135,7 @@ class Burnwire:
         GPIO.cleanup()
 
 # Debugging Area
-
+"""
 test_wire = Burnwire(2)
 test_wire.getBurnwireStatus()
 sleep(2)
@@ -145,5 +145,5 @@ if burn_result:
     print("Burn successful!")
 else:
     print("Burn attempt failed!")
-
+"""
 

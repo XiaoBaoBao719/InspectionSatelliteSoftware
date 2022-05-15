@@ -60,7 +60,7 @@ from char2bits import char2bits
 from bits2char import bits2char
 from read_data_string import read_data_string
 from write_data_string import write_data_string
-from FinalCam import run_camera
+
 
 # =====================================
 # ==         DEPLOYMENT VARS         ==
@@ -70,12 +70,22 @@ NUM_BURNWIRES = 2
 # =====================================
 # ==       COMMS GLOBAL VARS         ==
 # =====================================
-BAUDRATE = 19200 #9600
+BAUDRATE = 9600 #19200
 SYS_TIMEOUT = 1 # seconds
 mini_UART = '/dev/ttyS0'
 #PL011 = '/dev/ttyAMA0' 
 #SERIAL_PORT = PL011
 SERIAL_PORT = '/dev/ttyAMA0'
+#create serial object
+#global ser
+#ser = serial.Serial(
+#    port='/dev/ttyAMA0',  #port on UP board, pins # 8 (TX) and 10 (RX)
+#    baudrate=9600, #19200, #115200,
+#    parity=serial.PARITY_NONE,
+#    stopbits=serial.STOPBITS_ONE,
+#    bytesize=serial.EIGHTBITS,
+#    timeout=1
+#)
 
 # =====================================
 # ==           CV VARS               ==
@@ -110,7 +120,6 @@ STATE_VAR_PATH = os.getcwd() + '/' + STATE_VAR_NAME
 init_file = ""
 deployed = False
 burnwireFired = False
-hdd_done = False
 global_timer = None
 
 HDD = 0
@@ -141,6 +150,7 @@ def initializeComputer():
     """
     print("\n+++++++++++++++ STARTING FLIGHT COMPUTER +++++++++++++++")
     GPIO.setmode(GPIO.BCM)
+    #GPIO.setmode(GPIO.BOARD)
     GPIO.setwarnings(False)
     GPIO.setup(LED,GPIO.OUT)
     
@@ -231,6 +241,13 @@ def writeData(results):
     True if the data packet was sent without any issues
     False if otherwise
     """
+    # buffer_as_bytes = str.encode("Test Data", 'utf-8')
+    # buffer_as_bytes = str.encode(results)
+    print("Zuf")  #make sure we are here in the fxn
+    #print(type(results)) # check that it is a string
+    print(results) #tell what we are putting out
+    #ser.write(results.encode('utf-8'))
+    #ser.flush()
     
     with serial.Serial() as ser:
         ser.port=SERIAL_PORT
@@ -239,6 +256,7 @@ def writeData(results):
         ser.timeout=SYS_TIMEOUT
         ser.stopbits=serial.STOPBITS_ONE
         ser.bytesize=serial.EIGHTBITS
+        #ser.xonxoff=True
 
         try:
             print("Writing results...")
@@ -249,8 +267,8 @@ def writeData(results):
             time.sleep(1)
             print("Packet sent!")
             time.sleep(1) # Wait one second for packet to send
-            ser.flush()
-            ser.close()
+            #ser.flush()
+            #ser.close()
             return True  
         except (serial.SerialTimeoutException):
             # Reset the buffer and reset the serial conection
@@ -374,7 +392,7 @@ def doHDD(dir):
     
     else:
         result = HDD_cw_drive(sleep_time, delta)
-    sleep(5)
+    sleep(10)
     HDD_stop()   # uncomment when testing!
     flashled(5)
     # [w_x0, w_y0, w_z0, w_x1, w_y1, w_z1, w_xf, w_yf, w_zf, HDD_current_f] = [-1.0, -2.0, -3.0, 1.0, 2.0, 3.0, -1.0, -2.0, -3.0, 0.05]
@@ -383,7 +401,7 @@ def doHDD(dir):
     return result
 
 def reference():
-    sleep(3)
+    sleep(5)
     print("\n CASE: \"It's not possible!\"")
     sleep(2)
     print("\n Cooper: \"No. It's necessary\"")
@@ -414,14 +432,6 @@ def setup():
         current_num_boots = 0
     current_num_boots += 1
     writeStateVariable(STATE_VAR_PATH, "BOOT_COUNTER", current_num_boots)
-
-    # Check if we already ran HDD experiment
-    read_out = readStateVariable(STATE_VAR_PATH, "HDD_COMPLETE") 
-    try:
-        hdd_done = read_out[0] # Get the state variable for Deployed
-    except TypeError as e:
-        print("ISSUE WITH READING THE STATE VARIABLE: HDD_COMPLETE")
-        print(e)
 
     # Check if we already deployed
     read_out = readStateVariable(STATE_VAR_PATH, "DEPLOYED") 
@@ -465,11 +475,11 @@ def setup():
         system_error = True
         
     # Check serial UART connection is good
-    d = "COMMcheckWITHup"
-    ser_is_open = writeData(d)
-    if not ser_is_open:
-        print("Issue with connecting to S/C Serial port!")
-        system_error = True
+    #d = "420420420420413"
+    #ser_is_open = writeData(d)
+    #if not ser_is_open:
+    #    print("Issue with connecting to S/C Serial port!")
+    #    system_error = True
     
     # Send health data packet to primary flight computer for check
     writeStateVariable(STATE_VAR_PATH, "HARDWARE_ERROR", system_error)
@@ -482,16 +492,16 @@ def setup():
     
     print("Health Check Complete. \n Standing by")
     #flashled(20)
-    sleep(2)
+    sleep(5)
     
-TOTAL_HDD_EXPERIMENTS = 1 # number experiments to perform
+TOTAL_HDD_EXPERIMENTS = 2 # number experiments to perform
 TIME_PER_HDD = 120 # 5 mins between each experiment
 
 def HDD_Main():
     # Start HDD Experiment
     print("Initiating HDD experiment...")
     #flashled(10)
-    sleep(1)
+    sleep(2)
     HDD_results = []
     HDD_timer = FSWTimer()
     tmp_timer = FSWTimer()
@@ -502,9 +512,10 @@ def HDD_Main():
     curr_results = []
     num_runs = 1
     hdd_bytes = ""
+    hdd_data_out = []
     
     print("\n+++++++++++++++ STARTING HDD +++++++++++++++")
-    sleep(1)
+    sleep(2)
     #reference()
     while num_runs <= TOTAL_HDD_EXPERIMENTS:
         if (tmp_timer.elapsed_time() % TIME_PER_HDD >= 0):
@@ -516,13 +527,13 @@ def HDD_Main():
             print("Run successful!")
             # sleep(TIME_PER_HDD) # Wait for system to settle after 5 mins
             wxa = curr_results[0]
-            wxb = curr_results[3]
-            wxc = curr_results[6]
-            wya = curr_results[1]
+            wxb = curr_results[1]
+            wxc = curr_results[2]
+            wya = curr_results[3]
             wyb = curr_results[4]
-            wyc = curr_results[7]
-            wza = curr_results[2]
-            wzb = curr_results[5]
+            wyc = curr_results[5]
+            wza = curr_results[6]
+            wzb = curr_results[7]
             wzc = curr_results[8]
             cd  = curr_results[9]
 
@@ -532,7 +543,8 @@ def HDD_Main():
                                             WYA=wya, WYB=wyb, WYC=wyc, WZA=wza, WZB=wzb, WZC=wzc,
                                             CD=cd, TEMP=getCPUTemp())
             hdd_data_string = bits2char(hdd_bytes)
-            writeData(hdd_data_string)
+            hdd_data_out.append(hdd_data_string)
+            #writeData(hdd_data_string)
             tmp_timer = FSWTimer()
             tmp_timer.start()
         # Update
@@ -541,14 +553,13 @@ def HDD_Main():
         
     print(f"Total Elapsed HDD time: {HDD_timer.elapsed_time():0.4f} seconds")
     HDD_timer.stop()
-    hdd_done = True
-    writeStateVariable(STATE_VAR_PATH, "HDD_COMPLETE", True)
     
-    pass
+    #pass
+    return hdd_data_out
 
 
 TIME_PER_HIO = 5*60 # minutes
-MAX_IMGS = 5
+MAX_IMGS = 1
 INFERENCE_THRESHOLD = 0.4
 model_filename = os.getcwd()+'/handrail_output.pth'    #located in output.zip folder
 
@@ -573,7 +584,7 @@ def HIO_Setup():
         # SETUP AND DEPLOY BURNWIRE 
         burnwire = Burnwire(NUM_BURNWIRES)
         burnwire.getBurnwireStatus()
-        sleep(1)
+        sleep(2)
         burn_channels = [1, 2]
 
         # Write to state variable in case of burnwire forced reboot event
@@ -597,19 +608,11 @@ def HIO_Main():
     # image_path = picam.getCapturePath()
     
     print("Initiating HIO Experiment...")
-    sleep(2)
+    sleep(5)
     HIO_timer = FSWTimer()
     HIO_timer.start()
     
-    num_imgs_str = readStateVariable(STATE_VAR_PATH, "NUMBER_IMAGES")
-    try:
-        num_imgs = int(num_imgs_str[0])
-    except Exception as e:
-        print("Issue with reading for the state variable: NUMBER_IMAGES!")
-        print(e)
-        print(num_imgs_str)
-        num_imgs = 1
-    #num_imgs = 1
+    num_imgs = 1
 
     print("\n+++++++++++++++ THE EYE OF HIO OPENS ITS BALEFUL GAZE +++++++++++++++")
     while num_imgs <= MAX_IMGS:
@@ -620,12 +623,8 @@ def HIO_Main():
             # img_capture = picam.takePicture("test{num}_gain_{gain}.jpg".format(num = picam.getNumPicsTake(), 
             #                                                     gain = picam.getGainVal()))
             
-            camera_run(num_imgs)  #take picture and save to cwd
-            img_capture = os.getcwd() + '/img_' + str(num_imgs) + '.jpg'
-            
             # Test dummy data
-            #img_capture = os.getcwd() + '/sample_img_2.jpg'
-            
+            img_capture = os.getcwd() + '/sample_img_2.jpg'
             img = cv.imread(img_capture)
             
             # Push results of data aquisition to a local folder and return the path
@@ -668,8 +667,8 @@ def HIO_Main():
                 HIO_data_string = bits2char(data_bytes)
                 # Write bitstream to serial comm
                 writeData(HIO_data_string)
-                num_imgs += 1
                 writeStateVariable(STATE_VAR_PATH, "NUMBER_IMAGES", num_imgs)
+                num_imgs += 1
                 
             elif img_capture is None:
                 print(" IMAGE NOT CAPTURED! Trying again...")
@@ -681,17 +680,156 @@ def HIO_Main():
 
 if (__name__ == "__main__"):
 
+    # Check serial UART connection is good
+    d = "420420420420413"
+    
+    with serial.Serial() as ser:
+        ser.port=SERIAL_PORT
+        ser.baudrate=BAUDRATE
+        ser.parity=serial.PARITY_NONE
+        ser.timeout=SYS_TIMEOUT
+        ser.stopbits=serial.STOPBITS_ONE
+        ser.bytesize=serial.EIGHTBITS
+        #ser.xonxoff=True
+
+        try:
+            print("Writing results...")
+            ser.open()
+            num = ser.write(d.encode('utf-8'))
+            print(d.encode('utf-8'))
+            print(num)
+            time.sleep(1)
+            print("Packet sent!")
+            time.sleep(1) # Wait one second for packet to send
+            ser.flush()
+            ser.close()
+            ser_is_open = True  
+        except (serial.SerialTimeoutException):
+            # Reset the buffer and reset the serial conection
+            print("Serial Timed out! Re-attempting connection...")
+            ser.reset_input_buffer()
+            ser.reset_output_buffer()
+            ser_is_open = False
+    
+    #ser_is_open = writeData(d)
+    if not ser_is_open:
+        print("Issue with connecting to S/C Serial port!")
+        system_error = True
+
+    # Check serial UART connection is good
+    d = "420420420420414"
+    
+    with serial.Serial() as ser:
+        ser.port=SERIAL_PORT
+        ser.baudrate=BAUDRATE
+        ser.parity=serial.PARITY_NONE
+        ser.timeout=SYS_TIMEOUT
+        ser.stopbits=serial.STOPBITS_ONE
+        ser.bytesize=serial.EIGHTBITS
+        #ser.xonxoff=True
+
+        try:
+            print("Writing results...")
+            ser.open()
+            num = ser.write(d.encode('utf-8'))
+            print(d.encode('utf-8'))
+            print(num)
+            time.sleep(1)
+            print("Packet sent!")
+            time.sleep(1) # Wait one second for packet to send
+            ser.flush()
+            ser.close()
+            ser_is_open = True  
+        except (serial.SerialTimeoutException):
+            # Reset the buffer and reset the serial conection
+            print("Serial Timed out! Re-attempting connection...")
+            ser.reset_input_buffer()
+            ser.reset_output_buffer()
+            ser_is_open = False
+    
+    #ser_is_open = writeData(d)
+    if not ser_is_open:
+        print("Issue with connecting to S/C Serial port!")
+        system_error = True
+
     # Run system setup
     setup()
+    
+    # Check serial UART connection is good
+    d = "420420420420415"
+    
+    with serial.Serial() as ser:
+        ser.port=SERIAL_PORT
+        ser.baudrate=BAUDRATE
+        ser.parity=serial.PARITY_NONE
+        ser.timeout=SYS_TIMEOUT
+        ser.stopbits=serial.STOPBITS_ONE
+        ser.bytesize=serial.EIGHTBITS
+        #ser.xonxoff=True
 
-    if not hdd_done:
-        HDD_Main()
+        try:
+            print("Writing results...")
+            ser.open()
+            num = ser.write(d.encode('utf-8'))
+            print(d.encode('utf-8'))
+            print(num)
+            time.sleep(1)
+            print("Packet sent!")
+            time.sleep(1) # Wait one second for packet to send
+            ser.flush()
+            ser.close()
+            ser_is_open = True  
+        except (serial.SerialTimeoutException):
+            # Reset the buffer and reset the serial conection
+            print("Serial Timed out! Re-attempting connection...")
+            ser.reset_input_buffer()
+            ser.reset_output_buffer()
+            ser_is_open = False
     
-    sleep(2) # Wait 10 minutes for steady-state
+    #ser_is_open = writeData(d)
+    if not ser_is_open:
+        print("Issue with connecting to S/C Serial port!")
+        system_error = True
     
-    HIO_Setup()
-    sleep(2)
-    HIO_Main()
+    hdd_data_out = HDD_Main()
+    
+    for d in hdd_data_out:
+        with serial.Serial() as ser:
+            ser.port=SERIAL_PORT
+            ser.baudrate=BAUDRATE
+            ser.parity=serial.PARITY_NONE
+            ser.timeout=SYS_TIMEOUT
+            ser.stopbits=serial.STOPBITS_ONE
+            ser.bytesize=serial.EIGHTBITS
+        
+            try:
+                print("Writing results...")
+                ser.open()
+                num = ser.write(d.encode('utf-8'))
+                print(d.encode('utf-8'))
+                print(num)
+                time.sleep(1)
+                print("Packet sent!")
+                time.sleep(1) # Wait one second for packet to send
+                ser_is_open = True
+                ser.flush()
+                ser.close()
+            except (serial.SerialTimeoutException):
+                # Reset the buffer and reset the serial conection
+                print("Serial Timed out! Re-attempting connection...")
+                ser.reset_input_buffer()
+                ser.reset_output_buffer()
+                ser_is_open = False
+    
+        if not ser_is_open:
+            print("Issue with connecting to S/C Serial port!")
+            system_error = True
+    
+    sleep(5) # Wait 10 minutes for steady-state
+    
+    #HIO_Setup()
+    sleep(5)
+    #HIO_Main()
     
     # Clean up system
     #ser.close()
