@@ -110,7 +110,7 @@ STATE_VAR_PATH = os.getcwd() + '/' + STATE_VAR_NAME
 init_file = ""
 deployed = False
 burnwireFired = False
-hdd_done = False
+#hdd_done = False
 global_timer = None
 
 HDD = 0
@@ -537,7 +537,7 @@ def HDD_Main():
             tmp_timer.start()
         # Update
         num_runs += 1
-        writeStateVariable(STATE_VAR_PATH, "HDD_RUNS", num_runs)
+        writeStateVariable(STATE_VAR_PATH, "NUMBER_HDD_RUNS", num_runs)
         
     print(f"Total Elapsed HDD time: {HDD_timer.elapsed_time():0.4f} seconds")
     HDD_timer.stop()
@@ -684,8 +684,11 @@ if (__name__ == "__main__"):
     # Run system setup
     setup()
 
-    if not hdd_done:
+    hdd_done = readStateVariable(STATE_VAR_PATH, "HDD_DONE")
+
+    if hdd_done == False:
         HDD_Main()
+        writeStateVariable(STATE_VAR_PATH, "HDD_DONE", True)
     
     sleep(2) # Wait 10 minutes for steady-state
     
