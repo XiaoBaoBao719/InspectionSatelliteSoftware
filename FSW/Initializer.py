@@ -38,7 +38,8 @@ def main():
         json_out.write(json_str)
 
     with open(my_path, 'r') as json_out: # Debug statement to read what we just wrote
-        print(json.loads(json_out.read()))
+        parsed = json.loads(json_out.read())
+        print(json.dumps(parsed, indent=4, sort_keys=False))
     return
 
 if __name__ == "__main__":

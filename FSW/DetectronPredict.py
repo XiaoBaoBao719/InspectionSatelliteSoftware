@@ -70,6 +70,7 @@ def displayResults(detections,showImage=None):
   print(results)
     
   ### DEBUGGING: TABULATED DETECTION RESULTS ###
+
   spc1 = "                 "
   spc2 = "              "
 

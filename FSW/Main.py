@@ -446,7 +446,7 @@ def setup():
         sleep(5)
         reboot()
     
-    print("Health Check Complete. \n Standing by")
+    print("Health Check Complete. \nStanding by...")
     flashled(20)
     sleep(5)
     
