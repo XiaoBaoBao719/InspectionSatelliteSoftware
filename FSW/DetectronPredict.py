@@ -126,7 +126,7 @@ def getBestResults(detections):
 
 
 # ### FOR DEBUGGING PURPOSES ###
-
+"""
 model_filename = os.getcwd()+'/handrail_output.pth'    #located in output.zip folder
 im = cv2.imread(os.getcwd()+"/sample_img_2.jpg")     #located in same directory as inference_mask.py
 inference_threshold = 0.02
@@ -136,7 +136,7 @@ print(det_dict)
 displayResults(det_dict, im)
 
 print("\n", getBestResults(det_dict))
-
+"""
 # cv2.rectangle(im, (50, 50), (100, 100), (0,255,0), 3)
 # cv2.imshow("test", im)
 # cv2.waitKey(0)

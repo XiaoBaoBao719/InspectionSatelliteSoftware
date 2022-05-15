@@ -28,6 +28,7 @@ def main():
                     "BOOT_COUNTER": 0, 
                     "NUMBER_DARK_READINGS" : 0,
                     "NUMBER_IMAGES" : 0,
+                    "HDD_RUNS" : 0,
                     }
 
     json_str = json.dumps(initial_vars) # Convert to JSON string
