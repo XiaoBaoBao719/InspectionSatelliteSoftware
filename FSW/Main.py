@@ -59,7 +59,7 @@ from char2bits import char2bits
 from bits2char import bits2char
 from read_data_string import read_data_string
 from write_data_string import write_data_string
-from FinalCam import run_camera
+#from FinalCam import run_camera
 
 # =====================================
 # ==         DEPLOYMENT VARS         ==
@@ -72,7 +72,7 @@ NUM_BURNWIRES = 2
 BAUDRATE = 19200 #9600
 SYS_TIMEOUT = 1 # seconds
 mini_UART = '/dev/ttyS0'
-#PL011 = '/dev/ttyAMA0'
+PL011 = '/dev/ttyAMA0'
 SERIAL_PORT = PL011
 
 # =====================================
@@ -108,9 +108,10 @@ parameterDB_path_name = '\home\pi\Desktop\ParameterDB'
 STATE_VAR_NAME = "STATE_VARIABLES.json"
 STATE_VAR_PATH = os.getcwd() + '/' + STATE_VAR_NAME
 init_file = ""
-deployed = False
-burnwireFired = False
-global_timer = None
+global deployed
+global hdd_done
+global burnwire_fired
+global global_timer 
 
 HDD = 0 # Used for writing bitstream to JSC
 HIO = 1 # Used for writing bitstream to JSC
@@ -340,41 +341,19 @@ def setup():
     """ Performs initial bootup sequence once and deploys the payload mechanism
         Checks status of components by writing to a json file
     """
-    # Initialize the payload clock
-    global_timer = FSWTimer()
-    global_timer.start()
+    # Initialize globals
+    deployed = False
+    hdd_done = False
+    burnwire_fired = False
+    global_timer = None
     
     # INITIALIZE F/C GPIO
     initializeComputer()
     flashled(5)
-
-    # Attempt to read and increment the boot counter
-    boot_counter_str = readStateVariable(STATE_VAR_PATH, "BOOT_COUNTER")
-    try:
-        current_num_boots = int(boot_counter_str[0])
-    except Exception as e:
-        print("Issue with reading for the state variable: BOOT_COUNTER!")
-        print(e)
-        print(boot_counter_str)
-        current_num_boots = 0
-    current_num_boots += 1
-    writeStateVariable(STATE_VAR_PATH, "BOOT_COUNTER", current_num_boots)
-
-    # Check if we already ran HDD experiment
-    read_out = readStateVariable(STATE_VAR_PATH, "HDD_DONE") 
-    try:
-        hdd_done = read_out[0] # Get the state variable for Deployed
-    except TypeError as e:
-        print("ISSUE WITH READING THE STATE VARIABLE: HDD_DONE")
-        print(e)
-
-    # Check if we already deployed
-    read_out = readStateVariable(STATE_VAR_PATH, "DEPLOYED") 
-    try:
-        deployed = read_out[0] # Get the state variable for Deployed
-    except TypeError as e:
-        print("ISSUE WITH READING THE STATE VARIABLE: DEPLOYED")
-        print(e)
+    
+    # Initialize the payload clock
+    global_timer = FSWTimer()
+    global_timer.start()
 
     # INITIALIZE PAYLOAD CAMERA 
     """
@@ -500,47 +479,32 @@ model_filename = os.getcwd()+'/handrail_output.pth'    #located in output.zip fo
 def HIO_Setup():
     getSpacecraftState(STATE_VAR_PATH)
     # If deployed is FALSE, create a Burnwire() object and invoke the burn function
-    # Runs .burn() for both pins at 5000 Hz for 1 second
-    read_out = readStateVariable(STATE_VAR_PATH, "BURNWIRE_FIRED") # Check for the state variable for DEPLOYED
+    # Runs .burn() for both pins
     
-    print(read_out)
-    
-    try:
-        burn_fired = read_out[0] # Get the state variable for Deployed
-    except TypeError as e:
-        print("ISSUE WITH READING THE STATE VARIABLE: DEPLOYED")
-        print(e)
-    
-    print("Checking deployed state: ", deployed)
-    print("burnwire fired? ", type(burn_fired))
-    
-    if burn_fired == False:
-        # SETUP AND DEPLOY BURNWIRE 
-        burnwire = Burnwire(NUM_BURNWIRES)
-        burnwire.getBurnwireStatus()
-        sleep(1)
-        burn_channels = [1, 2]
+    # if burnwire_fired == "false":
+    # SETUP AND DEPLOY BURNWIRE 
+    burnwire = Burnwire(NUM_BURNWIRES)
+    burnwire.getBurnwireStatus()
+    sleep(1)
+    burn_channels = [1, 2]
 
-        # Write to state variable in case of burnwire forced reboot event
-        writeStateVariable(STATE_VAR_PATH, "BURNWIRE_FIRED", True)
-        writeStateVariable(STATE_VAR_PATH, "DEPLOYED", True)
-        burn_result = burnwire.burn(burn_channels)
+    # Write to state variable in case of burnwire forced reboot event
+    writeStateVariable(STATE_VAR_PATH, "BURNWIRE_FIRED", True)
+    writeStateVariable(STATE_VAR_PATH, "DEPLOYED", True)
+    deployed = burnwire.burn(burn_channels)
         
-        # If we successfully deployed nominally
-        """
-        if burn_result:
-            print("Burn successful!")
-            writeStateVariable(STATE_VAR_PATH, "DEPLOYED", burn_result)
-        else:
-            print("Burn attempt failed!")
-            writeStateVariable(STATE_VAR_PATH, "DEPLOYED", burn_result)
-        """
+    # If we successfully deployed nominally
+    if deployed:
+        print("Burn successful!")
+        writeStateVariable(STATE_VAR_PATH, "DEPLOYED", deployed)
+    else:
+        print("Burn attempt failed!")
+        writeStateVariable(STATE_VAR_PATH, "DEPLOYED", deployed)
+        
     getSpacecraftState(STATE_VAR_PATH)
 
 def HIO_Main():
-    
-    # image_path = picam.getCapturePath()
-    
+
     print("Initiating HIO Experiment...")
     sleep(2)
     HIO_timer = FSWTimer()
@@ -554,7 +518,6 @@ def HIO_Main():
         print(e)
         print(num_imgs_str)
         num_imgs = 1
-    #num_imgs = 1
 
     print("\n+++++++++++++++ THE EYE OF HIO OPENS ITS BALEFUL GAZE +++++++++++++++")
     while num_imgs <= MAX_IMGS:
@@ -606,7 +569,7 @@ def HIO_Main():
                     yd = 0
                     cy = 0  
 
-                # Encode YOLO results into bitstream
+                # Encode Mask R-CNN results into bitstream
                 data_bytes = write_data_string(TYPE=HIO, PN=num_imgs, YD=yd, 
                                                 YBBX1=x1, YBBY1=y1, YBBX2=x2, YBBY2=y2, 
                                                 CY=cy, PIC=img, TEMP=getCPUTemp())
@@ -624,20 +587,59 @@ def HIO_Main():
     # Check S/C state again   
     getSpacecraftState(STATE_VAR_PATH)  
 
-if (__name__ == "__main__"):
+def main():
+    # Check State Variables
+    # Attempt to read and increment the boot counter
+    boot_counter_str = readStateVariable(STATE_VAR_PATH, "BOOT_COUNTER")
+    try:
+        current_num_boots = int(boot_counter_str[0])
+    except Exception as e:
+        print("Issue with reading for the state variable: BOOT_COUNTER!")
+        print(e)
+        print(boot_counter_str)
+        current_num_boots = 0
+    current_num_boots += 1
+    writeStateVariable(STATE_VAR_PATH, "BOOT_COUNTER", current_num_boots)
+
+    # Check if we already ran HDD experiment
+    read_out = readStateVariable(STATE_VAR_PATH, "HDD_DONE") 
+    try:
+        hdd_done = read_out[0] # Get the state variable for Deployed
+    except TypeError as e:
+        print("ISSUE WITH READING THE STATE VARIABLE: HDD_DONE")
+        print(e)
+
+    # Check if we already fired burnwire
+    read_out = readStateVariable(STATE_VAR_PATH, "BURNWIRE_FIRED") 
+    try:
+        burnwire_fired = read_out[0] # Get the state variable for Deployed
+    except TypeError as e:
+        print("ISSUE WITH READING THE STATE VARIABLE: BURNWIRE_FIRED")
+        print(e)
+        
+    # Check if we already deployed
+    read_out = readStateVariable(STATE_VAR_PATH, "DEPLOYED") 
+    try:
+        deployed = read_out[0] # Get the state variable for Deployed
+    except TypeError as e:
+        print("ISSUE WITH READING THE STATE VARIABLE: DEPLOYED")
+        print(e)
 
     # Run system setup
     setup()
-
-    hdd_done = readStateVariable(STATE_VAR_PATH, "HDD_DONE")
-
-    if hdd_done == False:
+    
+    if hdd_done == "false":
         HDD_Main()
         writeStateVariable(STATE_VAR_PATH, "HDD_DONE", True)
     
     sleep(2) # Wait 10 minutes for steady-state
+    print(deployed)
+    print(type(deployed))
     
-    HIO_Setup()
+    if deployed == "false":
+        HIO_Setup()
+        writeStateVariable(STATE_VAR_PATH, "DEPLOYED", True)
+    
     sleep(2)
     HIO_Main()
     
@@ -647,4 +649,8 @@ if (__name__ == "__main__"):
     print("Goodbye!")
     sleep(2)
     #ser.__exit__()
+
+if (__name__ == "__main__"):
+    main()
+    
     
