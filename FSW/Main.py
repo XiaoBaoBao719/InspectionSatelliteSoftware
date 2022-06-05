@@ -62,6 +62,7 @@ from char2bits import char2bits
 from bits2char import bits2char
 from read_data_string import read_data_string
 from write_data_string import write_data_string
+
 #from FinalCam import run_camera
 
 # =====================================
