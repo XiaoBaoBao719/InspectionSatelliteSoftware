@@ -2,14 +2,17 @@
 import time
 import board
 import math
-i2c = board.I2C()
 
 # ESC Setup
 import os
 import pigpio
 
+# Create I2C object
+i2c = board.I2C()
+
 # Voltmeter
 import adafruit_ina260
+
 try:
     Power_Sensor = adafruit_ina260.INA260(i2c)
 except Exception:
@@ -144,7 +147,7 @@ def getCurrent():
         print("Issue reading the Power sensor")
     return -1.0
 
-"""
+""" Below For Debugging Only
 [w_x0, w_y0, w_z0, w_x1, w_y1, w_z1, w_xf, w_yf, w_zf, HDD_current_f] = HDD_ccw_drive(sleep_time, delta)
 #[w_x0, w_y0, w_z0, w_x1, w_y1, w_z1, w_xf, w_yf, w_zf, HDD_current_f] = HDD_cw_drive(sleep_time, delta)
 HDD_stop()

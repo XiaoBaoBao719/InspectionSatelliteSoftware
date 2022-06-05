@@ -4,14 +4,12 @@ import numpy as np
 import json
 import time
 import serial
-#from rx_ucd_data import rx_ucd_data
+from rx_ucd_data import rx_ucd_data
 
 #create serial object
 ser = serial.Serial(
-    #port='/dev/ttyAMA0',  #port on Py board, pins # 8 (TX) and 10 (RX)
-    #port='/dev/serial0',
-    port='/dev/ttyS4'
-    baudrate=9600,
+    port='/dev/serial0',  #port on Py board, pins # 8 (TX) and 10 (RX)
+    baudrate=19200,
     parity=serial.PARITY_NONE,
     stopbits=serial.STOPBITS_ONE,
     bytesize=serial.EIGHTBITS,
@@ -35,7 +33,9 @@ data.append("mmmmmmmmmmmmmmm")
 data.append("nnnnnnnnnnnnnnn")
 data.append("ooooooooooooooo")
 data.append("ppppppppppppppp")
-
+ser.reset_input_buffer()
+ser.reset_output_buffer()
+ser.flush()
 for d in data:
         #message = d
         ser.write(d.encode('utf-8'))
