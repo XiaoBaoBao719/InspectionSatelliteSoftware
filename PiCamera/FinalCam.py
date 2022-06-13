@@ -6,10 +6,10 @@ import shutil
 import sys
 from ctypes import *
 # load arducam shared object file
-arducam_vcm= CDLL('./lib/libarducam_vcm.so')
+#arducam_vcm= CDLL('./lib/libarducam_vcm.so')
 try:
     import picamera
-    from picamera.array import PiRGBArray
+   from picamera.array import PiRGBArray
 except:
     sys.exit(0)
     
@@ -17,7 +17,7 @@ def run_camera(img_num):
     # set desired focus value from 0-1023
     focus_val = 100
     # vcm init
-    arducam_vcm.vcm_init()
+    #arducam_vcm.vcm_init()
     # open camera
     camera = picamera.PiCamera()
     # open camera preview
@@ -54,5 +54,5 @@ def run_camera(img_num):
 
 # For debugging purposes
 if __name__ == "__main__":
-    run_camera()
+    run_camera(1)
     

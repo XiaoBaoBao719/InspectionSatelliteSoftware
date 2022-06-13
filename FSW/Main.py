@@ -37,6 +37,9 @@ import cv2 as cv
 import subprocess
 from PIL import Image
 
+# TESTING: I2C EXTENDED BUS
+#from adafruit_extended_bus import ExtendedI2C as I2C
+
 from time import sleep
 from tabulate import tabulate
 
@@ -59,6 +62,7 @@ from char2bits import char2bits
 from bits2char import bits2char
 from read_data_string import read_data_string
 from write_data_string import write_data_string
+
 #from FinalCam import run_camera
 
 # =====================================
@@ -69,11 +73,12 @@ NUM_BURNWIRES = 2
 # =====================================
 # ==       COMMS GLOBAL VARS         ==
 # =====================================
-BAUDRATE = 19200 #9600
+BAUDRATE = 19200 #115200
 SYS_TIMEOUT = 1 # seconds
 mini_UART = '/dev/ttyS0'
 PL011 = '/dev/ttyAMA0'
-SERIAL_PORT = PL011
+serial_zero = '/dev/serial0'
+SERIAL_PORT = serial_zero
 
 # =====================================
 # ==           CV VARS               ==
@@ -159,12 +164,12 @@ def getCPUTemp():
     False if the processor temperature exceeds allowable (system will auto throttle)
     """
     output = subprocess.check_output(["vcgencmd", "measure_temp", "core"])
-    temperature = float(output[5:9])
+    temperature = 50 #float(output[5:9])
     print('Current CPU Temp is :', temperature, " *C")
     return temperature
     
 def getVoltage():
-    output = subprocess.check_output(['vcgencmd', 'measure_volts', 'core'])
+    output = subprocess.check_output(['vcgencmd', 'measure_volts'])
     voltage = float(output[5:11])
     print("Current voltage running in: core", voltage, 'V')
     return voltage
@@ -204,32 +209,36 @@ def writeData(results):
     True if the data packet was sent without any issues
     False if otherwise
     """
-    
-    with serial.Serial() as ser:
-        ser.port=SERIAL_PORT
-        ser.baudrate=BAUDRATE
-        ser.parity=serial.PARITY_NONE
-        ser.timeout=SYS_TIMEOUT
-        ser.stopbits=serial.STOPBITS_ONE
-        ser.bytesize=serial.EIGHTBITS
+    ser = serial.Serial()
+    #with serial.Serial() as ser: # Commented out for CM4, as it causes problems with the CM4
+    ser.port=SERIAL_PORT
+    ser.baudrate=BAUDRATE
+    ser.parity=serial.PARITY_NONE
+    ser.timeout=SYS_TIMEOUT
+    ser.stopbits=serial.STOPBITS_ONE
+    ser.bytesize=serial.EIGHTBITS
 
-        try:
-            print("Writing results...")
-            ser.open()
-            num = ser.write(results.encode('utf-8'))
-            print(results.encode('utf-8'))
-            print(num)
-            time.sleep(1)
-            print("Packet sent!")
-            time.sleep(1) # Wait one second for packet to send
-            ser.flush()
-            ser.close()
-            return True  
-        except (serial.SerialTimeoutException):
-            # Reset the buffer and reset the serial conection
-            print("Serial Timed out! Re-attempting connection...")
-            ser.reset_input_buffer()
-            ser.reset_output_buffer()
+    try:
+        print("Writing results...")
+        ser.open()
+        #time.sleep(1)
+        #temp = results.encode('utf-8')
+        #print(temp)
+        
+        num = ser.write(results.encode('utf-8'))
+        print(results.encode('utf-8'))
+        print(num)
+        time.sleep(1)
+        print("Packet sent!")
+        time.sleep(1) # Wait one second for packet to send
+        ser.flush()
+        ser.close()
+        return True  
+    except (serial.SerialTimeoutException):
+        # Reset the buffer and reset the serial conection
+        print("Serial Timed out! Re-attempting connection...")
+        ser.reset_input_buffer()
+        ser.reset_output_buffer()
     
         # bytesInBuffer = ser.in_waiting()
         # print(bytesInBuffer)
@@ -389,11 +398,11 @@ def setup():
         system_error = True
         
     # Check serial UART connection is good
-    d = "COMMcheckWITHup"
-    ser_is_open = writeData(d)
-    if not ser_is_open:
-        print("Issue with connecting to S/C Serial port!")
-        system_error = True
+#     d = "COMMcheckWITHup"
+#     ser_is_open = writeData(d)
+#     if not ser_is_open:
+#         print("Issue with connecting to S/C Serial port!")
+#         system_error = True
     
     # Send health data packet to primary flight computer for check
     writeStateVariable(STATE_VAR_PATH, "HARDWARE_ERROR", system_error)
@@ -408,14 +417,14 @@ def setup():
     #flashled(20)
     sleep(2)
     
-TOTAL_HDD_EXPERIMENTS = 1 # number experiments to perform
+TOTAL_HDD_EXPERIMENTS = 4  # number experiments to perform
 TIME_PER_HDD = 120 # 5 mins between each experiment
 
 def HDD_Main():
     # Start HDD Experiment
     print("Initiating HDD experiment...")
     #flashled(10)
-    sleep(1)
+    sleep(2)
     HDD_results = []
     HDD_timer = FSWTimer()
     tmp_timer = FSWTimer()
@@ -471,12 +480,14 @@ def HDD_Main():
     pass
 
 
-TIME_PER_HIO = 5*60 # minutes
-MAX_IMGS = 5
+TIME_PER_HIO = 4*60 # minutes
+MAX_IMGS = 2
 INFERENCE_THRESHOLD = 0.4
 model_filename = os.getcwd()+'/handrail_output.pth'    #located in output.zip folder
 
 def HIO_Setup():
+    print("Setting up HIO Experiment...")
+    sleep(2)
     getSpacecraftState(STATE_VAR_PATH)
     # If deployed is FALSE, create a Burnwire() object and invoke the burn function
     # Runs .burn() for both pins
@@ -490,7 +501,10 @@ def HIO_Setup():
 
     # Write to state variable in case of burnwire forced reboot event
     writeStateVariable(STATE_VAR_PATH, "BURNWIRE_FIRED", True)
+    
+    # This is potentially dangerous unless we have another way of checking if we are deployed
     writeStateVariable(STATE_VAR_PATH, "DEPLOYED", True)
+    
     deployed = burnwire.burn(burn_channels)
         
     # If we successfully deployed nominally
@@ -519,6 +533,10 @@ def HIO_Main():
         print(num_imgs_str)
         num_imgs = 1
 
+    if num_imgs > MAX_IMGS:
+        print("Already finished taking specified number of images")
+        return # << bad design, recommend changing
+
     print("\n+++++++++++++++ THE EYE OF HIO OPENS ITS BALEFUL GAZE +++++++++++++++")
     while num_imgs <= MAX_IMGS:
         # if the elapsed time on the timer thread is a multiple of the timer interval 
@@ -528,11 +546,11 @@ def HIO_Main():
             # img_capture = picam.takePicture("test{num}_gain_{gain}.jpg".format(num = picam.getNumPicsTake(), 
             #                                                     gain = picam.getGainVal()))
             
-            camera_run(num_imgs)  #take picture and save to cwd
-            img_capture = os.getcwd() + '/img_' + str(num_imgs) + '.jpg'
+            #camera_run(num_imgs)  #take picture and save to cwd
+            #img_capture = os.getcwd() + '/img_' + str(num_imgs) + '.jpg'
             
             # Test dummy data
-            #img_capture = os.getcwd() + '/sample_img_2.jpg'
+            img_capture = os.getcwd() + '/sample_img_2.jpg'
             
             img = cv.imread(img_capture)
             
@@ -544,11 +562,13 @@ def HIO_Main():
                 # cv.destroyAllWindows()
 
                 # Perform model inference on the returned path from the model              
-                det_dict = Inference_Mask(img, INFERENCE_THRESHOLD)
+                #det_dict = Inference_Mask(img, INFERENCE_THRESHOLD)
                 
                 ### DEBUGGING TABULATED DETECTION RESULTS ###
-                displayResults(det_dict)
-                #det_dict = {0: {'bbox': [371.8197, 312.28333, 1514.4973, 665.65515], 'conf': 0.99867}, 1: {'bbox': [998.0732, 295.11374, 1515.9216, 582.3098], 'conf': 0.07558}}
+                #displayResults(det_dict)
+                
+                # Test Debugging Dumb Mode
+                det_dict = {0: {'bbox': [371.8197, 312.28333, 1514.4973, 665.65515], 'conf': 0.99867}, 1: {'bbox': [998.0732, 295.11374, 1515.9216, 582.3098], 'conf': 0.07558}}
 
                 _bb, _conf = getBestResults(det_dict)
                 
@@ -589,10 +609,11 @@ def HIO_Main():
 
 def main():
     # Check State Variables
+    
     # Attempt to read and increment the boot counter
     boot_counter_str = readStateVariable(STATE_VAR_PATH, "BOOT_COUNTER")
     try:
-        current_num_boots = int(boot_counter_str[0])
+        current_num_boots = int(boot_counter_str[0]) # Get the state variable for BOOT_COUNTER
     except Exception as e:
         print("Issue with reading for the state variable: BOOT_COUNTER!")
         print(e)
@@ -604,7 +625,7 @@ def main():
     # Check if we already ran HDD experiment
     read_out = readStateVariable(STATE_VAR_PATH, "HDD_DONE") 
     try:
-        hdd_done = read_out[0] # Get the state variable for Deployed
+        hdd_done = read_out[0] # Get the state variable for HDD_DONE
     except TypeError as e:
         print("ISSUE WITH READING THE STATE VARIABLE: HDD_DONE")
         print(e)
@@ -612,7 +633,7 @@ def main():
     # Check if we already fired burnwire
     read_out = readStateVariable(STATE_VAR_PATH, "BURNWIRE_FIRED") 
     try:
-        burnwire_fired = read_out[0] # Get the state variable for Deployed
+        burnwire_fired = read_out[0] # Get the state variable for BURNWIRE_FIRED
     except TypeError as e:
         print("ISSUE WITH READING THE STATE VARIABLE: BURNWIRE_FIRED")
         print(e)
@@ -620,7 +641,7 @@ def main():
     # Check if we already deployed
     read_out = readStateVariable(STATE_VAR_PATH, "DEPLOYED") 
     try:
-        deployed = read_out[0] # Get the state variable for Deployed
+        deployed = read_out[0] # Get the state variable for DEPLOYED
     except TypeError as e:
         print("ISSUE WITH READING THE STATE VARIABLE: DEPLOYED")
         print(e)
@@ -628,27 +649,34 @@ def main():
     # Run system setup
     setup()
     
+    #print("hdd done check:", hdd_done)
+    #print(type(hdd_done))
+    #print(hdd_done == "false")
+    
     if hdd_done == "false":
         HDD_Main()
-        writeStateVariable(STATE_VAR_PATH, "HDD_DONE", True)
+        writeStateVariable(STATE_VAR_PATH, "HDD_DONE", "true")
     
     sleep(2) # Wait 10 minutes for steady-state
-    print(deployed)
-    print(type(deployed))
     
-    if deployed == "false":
+    #print("HIO deploy done check:", deployed)
+    #print(deployed)
+    #print(type(deployed))
+    
+    if deployed == "false" or burnwire_fired == "false":
         HIO_Setup()
-        writeStateVariable(STATE_VAR_PATH, "DEPLOYED", True)
+        writeStateVariable(STATE_VAR_PATH, "DEPLOYED", "true")
     
     sleep(2)
     HIO_Main()
     
+    # Print final S/C State Variables
+    getSpacecraftState(STATE_VAR_PATH)
+    
     # Clean up system
-    #ser.close()
     os.system ("sudo killall pigpiod")
     print("Goodbye!")
     sleep(2)
-    #ser.__exit__()
 
 if (__name__ == "__main__"):
     main()

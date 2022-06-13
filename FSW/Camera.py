@@ -85,7 +85,7 @@ class Camera():
         self.out_encoding = ""
         self.height = ""
         self.width = ""
-        self.num_pics_taken = 0
+        self.num_pics_taken = 1
         self.num_gain = 0
   #      self.gain = " --gain {0}".format(gain)
         self.ev = " --ev {0}".format(0) 
@@ -116,7 +116,7 @@ class Camera():
             while attempting to take the image.
         """
         print("Taking a picture!")
-<<<<<<< HEAD
+#<<<<<<< HEAD
         
         self.gain_value = gain
         
@@ -126,11 +126,11 @@ class Camera():
         self.exposure_time_value = exposure_time
         self.gain = " --gain {0}".format(gain)
         
-        self.output = "".join('-o ' + self.outpath + '\\' + filename + "gain:{gainval}_exp:{exp}_t:{tout}.jpg".format(gainval = gain, exp = exposure_time, tout = timeout))
-=======
+        self.output = "".join('-o ' + self.path + '\\' + filename + "gain:{gainval}_exp:{exp}_t:{tout}.jpg".format(gainval = gain, exp = exposure_time, tout = timeout))
+#=======
 
-        self.output = "".join('-o ' + self.path + '\\' + file_name + ' ')
->>>>>>> a5613a168c4e5e1caad3bfddb01dcb6f747fedd9
+        self.output = "".join('-o ' + self.path + '\\' + filename + ' ')
+#>>>>>>> a5613a168c4e5e1caad3bfddb01dcb6f747fedd9
         self.out_encoding = "".join(' -e ' + self.encoding)
         self.timeout = self.time_out
         self.height = "".join(' --height ' +  str(self.pxl_height) + ' ')
@@ -151,12 +151,12 @@ class Camera():
         
         
         print(self.config)
-<<<<<<< HEAD
+#<<<<<<< HEAD
         
         return True
-=======
+#=======
         return (True, self.path+'\\'+file_name)
->>>>>>> a5613a168c4e5e1caad3bfddb01dcb6f747fedd9
+#>>>>>>> a5613a168c4e5e1caad3bfddb01dcb6f747fedd9
 
     def getNumPicsTake(self):
         """ Returns the number of images successfully captured by the Camera object.
@@ -168,7 +168,7 @@ class Camera():
         """
         return self.gain_value
     
-<<<<<<< HEAD
+#<<<<<<< HEAD
     def getExposureTimeVal(self):
         """ Returns the gain value successfully captured by the Camera object.
         """
@@ -178,10 +178,10 @@ class Camera():
         """ Returns the gain value successfully captured by the Camera object.
         """
         return self.timeout_value
-=======
+#=======
     def getCapturePath(self):
         return self.path
->>>>>>> a5613a168c4e5e1caad3bfddb01dcb6f747fedd9
+#>>>>>>> a5613a168c4e5e1caad3bfddb01dcb6f747fedd9
 
 # For debugging purposes only
 if __name__ == "__main__":
@@ -189,7 +189,7 @@ if __name__ == "__main__":
     
     
     
-    picam = Camera(height = 1080, width = 1920)
+    picam = Camera(height = 600, width = 600)
 
     picam.takePicture("test{num}_gain_{gain}.jpg".format(num = picam.getNumPicsTake(), gain = picam.getGainVal()), gain = 10, exposure_time=8000, timeout = 100000 )
     #picam.takePicture("test6.jpg")  
