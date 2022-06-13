@@ -30,7 +30,8 @@ def Inference_Mask(im, inference_threshold):
   cfg = get_cfg() 
   cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"))
   #cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, model_filename)  # path to the model we just trained
-  cfg.MODEL.WEIGHTS = os.getcwd()+'/handrail_model.pth'
+  # cfg.MODEL.WEIGHTS = os.getcwd()+'/handrail_model.pth'
+  cfg.MODEL.WEIGHTS = os.getcwd()+'/FSW/handrail_model.pth'
   # FOR DEBUGGING ONLY
   cfg.MODEL.DEVICE = 'cpu'
 
@@ -89,23 +90,7 @@ def displayResults(detections,showImage=None):
         # print("bbox yo", bbox)
         # print("conf ay", conf)
 
-        pt1 = bbox[:2]
-        pt1 = (int(pt1[0]), int(pt1[1]))
-        pt2 = bbox[2:]
-        pt2 = (int(pt2[0]), int(pt2[1]))
-
-        print("pt1", pt1)
-        print("pt2", pt2)
-
-        # pt1 = (371, 312)
-        # pt2 = (1500, 600)
-
-        cv2.rectangle(annoted,pt1,pt2,(0,255,0),3)
-        # print(bbox)
-
-        cv2.imshow("annoted", annoted)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        #showResults(annoted, bbox)
 
 def getBestResults(detections):
     bestBox = []
@@ -119,25 +104,44 @@ def getBestResults(detections):
         if conf > bestConf:
             bestConf = conf
             bestBox = bbox
-    
+
     if bestBox is not None:
         return bestBox, bestConf
     
     return [0,0]
 
+def showResults(img, bbox):
+  pt1 = bbox[:2]
+  pt1 = (int(pt1[0]), int(pt1[1]))
+  pt2 = bbox[2:]
+  pt2 = (int(pt2[0]), int(pt2[1]))
+
+  print("pt1", pt1)
+  print("pt2", pt2)
+
+  cv2.rectangle(img,pt1,pt2,(0,255,0),3)
+  # print(bbox)
+
+  # cv2.imshow("annoted", annoted)
+  cv2.imwrite("annotated_2.jpg", img)
+  cv2.waitKey(0)
+  cv2.destroyAllWindows()
 
 # ### FOR DEBUGGING PURPOSES ###
-"""
+
 model_filename = os.getcwd()+'/handrail_output.pth'    #located in output.zip folder
-im = cv2.imread(os.getcwd()+"/sample_img_2.jpg")     #located in same directory as inference_mask.py
+im = cv2.imread(os.getcwd()+"/FSW/Testing/sharpened_rail.png")
+# im = cv2.imread(os.getcwd()+"/FSW/Testing/test_img.jpg")
+#im = cv2.imread(os.getcwd()+"/sample_img_2.jpg")     #located in same directory as inference_mask.py
 inference_threshold = 0.02
 
 det_dict = Inference_Mask(im, inference_threshold)
 print(det_dict)
 displayResults(det_dict, im)
+_bbox, _conf = getBestResults(det_dict)
+showResults(im, _bbox)
 
-print("\n", getBestResults(det_dict))
-"""
+
 # cv2.rectangle(im, (50, 50), (100, 100), (0,255,0), 3)
 # cv2.imshow("test", im)
 # cv2.waitKey(0)

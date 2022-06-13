@@ -1,0 +1,118 @@
+from skimage.data import camera, astronaut
+from skimage.filters import butterworth
+import cv2
+import matplotlib as plt
+import numpy as np
+import os
+from PIL import Image
+from skimage import filters
+import scipy
+import scipy.misc
+from scipy import ndimage
+import math
+
+# Takes 2d image and kernal numpy array objects using element-wise multiplication
+# Performance: O(n^2)
+# def convolve(image, kernel):
+#     """
+#     This function which takes an image and a kernel and returns the convolution of them.
+
+#     :param image: a numpy array of size [image_height, image_width].
+#     :param kernel: a numpy array of size [kernel_height, kernel_width].
+#     :return: a numpy array of size [image_height, image_width] (convolution output).
+#     """
+#     # Flip the kernel
+#     kernel = np.flipud(np.fliplr(kernel))
+#     kernel_width = kernel.shape[0]
+#     kernel_height = kernel.shape[1]
+
+#     paddist_x = int(math.ceil(kernel_width/2))
+#     paddist_y = int(math.ceil(kernel_height/2))
+#     # convolution output
+#     output = np.zeros_like(image)
+#     # Add zero padding to the input image
+#     image_padded = np.zeros((image.shape[0] + 2*paddist_y, 
+#                                 image.shape[1] + 2*paddist_x))
+#     image_padded[(paddist_y):(image.shape[0]+paddist_y),
+#                     (paddist_x):(image.shape[1]+paddist_x)] = image
+#     max_dim = max(kernel_width, kernel_height)
+
+#     # If kernel size is not uniform, force it to be
+#     if kernel_width != kernel_height:
+#         max_dim = max(kernel_width, kernel_height)
+#         kernel_padded = np.zeros((max_dim, max_dim))
+#     # Loop over every pixel of the image
+#     for x in range(image.shape[1]):
+#         for y in range(image.shape[0]):
+#             # element-wise multiplication of the kernel and the image
+#             sum = (kernel * image_padded[y: y+kernel_height, x: x+kernel_width]).sum()
+#             output[y, x] = sum
+#     return output
+
+# def GaussianBlurImage(image, sigma)->Image:
+#     filter_size = 2 * int(sigma * 4 + 0.5) + 1
+#     print(f'filter size: {filter_size}')
+#     gaussian_filter = np.zeros((filter_size, filter_size), np.float32)
+
+#     for i in range(filter_size):
+#         for j in range(filter_size):
+#             x = i - filter_size // 2
+#             y = j - filter_size // 2
+#             # print(x, y)
+#             gaussian_filter[i, j] = (1.0 / (2 * np.pi * sigma ** 2) * np.exp(-(x ** 2 + y ** 2)/(2 * sigma ** 2)))
+    
+#     # print("Gaussian Filter shape: ", gaussian_filter.shape)
+#     print(gaussian_filter)
+#     num_channels = 0
+#     image_filtered = np.zeros_like(image, dtype=np.int64)
+
+#     try:
+#         num_channels = image.shape[2]
+#     except IndexError:
+#         image_filtered = convolve(image[:, :], kernel=gaussian_filter)
+#         return image_filtered
+
+#     # PERFORM CONVOLUTION
+    
+#     for c in range(num_channels): # 3 is chosen since the image is [x pix, y pix, n channels] where n = 3
+#         # image_filtered[:, :, c] = sc.ndimage.convolve(image[:, :, c], gaussian_filter, mode='constant', cval=0.0)
+#         # print(image_filtered[:, :, c])
+#         image_filtered[:, :, c] = convolve(image[:, :, c], kernel=gaussian_filter)
+
+#     # image_filtered = np.clip(image_filtered, 0, 255).astype(np.int8)
+#     return image_filtered
+
+# def SharpenImage(image, sigma, alpha):
+
+#     image = np.array(image, dtype=np.float64)
+#     output = np.zeros_like(image, dtype=np.float64)
+#     gaussian_filtered = GaussianBlurImage(image, sigma)
+#     print(gaussian_filtered.dtype)
+#     print(gaussian_filtered.shape)
+#     print(output.shape)
+#     print(image.shape)
+
+#     for c in range(image.shape[2]):
+#         for j in range(image.shape[0]):
+#             for i in range(image.shape[1]):
+#                 val = (image[j, i, c] - alpha * (gaussian_filtered[j, i, c] - image[j, i, c]))
+#                 output[j, i, c] = image[j, i, c] + val
+#     output = np.array(output, dtype=np.int32)
+#     return output
+
+# sharpened = (SharpenImage(yosemiteImg, 1.0, 5.0))
+# plt.imshow(sharpened)
+
+test = cv2.imread(os.getcwd() + '/FSW/Testing/test_img.jpg', -1)
+# sharpened = (SharpenImage(test, 1.0, 5.0))
+print(test)
+
+f = test.astype(float)
+blurred_f = ndimage.gaussian_filter(f, 3)
+filter_blurred_f = ndimage.gaussian_filter(blurred_f, 1)
+alpha = 300
+sharpened = blurred_f + alpha * (blurred_f - filter_blurred_f)
+
+cv2.imwrite(os.getcwd()+"/FSW/Testing/sharpened_rail.png", sharpened)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
