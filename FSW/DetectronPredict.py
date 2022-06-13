@@ -31,7 +31,7 @@ def Inference_Mask(im, inference_threshold):
   cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"))
   #cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, model_filename)  # path to the model we just trained
   # cfg.MODEL.WEIGHTS = os.getcwd()+'/handrail_model.pth'
-  cfg.MODEL.WEIGHTS = os.getcwd()+'/FSW/handrail_model.pth'
+  cfg.MODEL.WEIGHTS = os.getcwd()+'/FSW/mask_model.pth'
   # FOR DEBUGGING ONLY
   cfg.MODEL.DEVICE = 'cpu'
 
@@ -129,8 +129,8 @@ def showResults(img, bbox):
 
 # ### FOR DEBUGGING PURPOSES ###
 
-model_filename = os.getcwd()+'/handrail_output.pth'    #located in output.zip folder
-im = cv2.imread(os.getcwd()+"/sample_img.jpg")     #located in same directory as inference_mask.py
+# model_filename = os.getcwd()+'/handrail_output.pth'    #located in output.zip folder
+im = cv2.imread(os.getcwd()+"/FSW/sample_img.jpg")     #located in same directory as inference_mask.py
 inference_threshold = 0.02
 
 det_dict = Inference_Mask(im, inference_threshold)

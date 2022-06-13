@@ -55,7 +55,7 @@ sys.path.insert(0, os.getcwd() + '/FSW')
 sys.path.insert(0, os.getcwd() + '/Detectron2')
 sys.path.insert(0, os.getcwd() + 'YOLOv5')
 from DetectronPredict import Inference_Mask, displayResults, getBestResults
-#from YoloPredictor import run
+from YoloPredict import Inference_Yolo
 from FSWTimer import *
 
 from char2bits import char2bits
@@ -184,7 +184,7 @@ def reboot():
         time_left = 10 - reboot_time.elapsed_time()
         print(f"Rebooting in: {time_left:0.2f}")
     sleep(0.1)
-    system('sudo restart')
+    os.system('sudo restart')
     sys.exit(0)
     
 def writeData(results):
@@ -562,15 +562,17 @@ def HIO_Main():
                 # cv.destroyAllWindows()
 
                 # Perform model inference on the returned path from the model              
-                #det_dict = Inference_Mask(img, INFERENCE_THRESHOLD)
+                #mask_result = Inference_Mask(img, INFERENCE_THRESHOLD)
+                yolo_result = Inference_Yolo(img)
                 
                 ### DEBUGGING TABULATED DETECTION RESULTS ###
-                #displayResults(det_dict)
-                
-                # Test Debugging Dumb Mode
-                det_dict = {0: {'bbox': [371.8197, 312.28333, 1514.4973, 665.65515], 'conf': 0.99867}, 1: {'bbox': [998.0732, 295.11374, 1515.9216, 582.3098], 'conf': 0.07558}}
+                #displayResults(mask_result)
 
-                _bb, _conf = getBestResults(det_dict)
+                # Test Debugging Dumb Mode
+                # det_dict = {0: {'bbox': [371.8197, 312.28333, 1514.4973, 665.65515], 'conf': 0.99867}, 1: {'bbox': [998.0732, 295.11374, 1515.9216, 582.3098], 'conf': 0.07558}}
+
+                #_bb, _conf = getBestResults(mask_result)
+                _bb, _conf = yolo_result
                 
                 print(_bb)
                 

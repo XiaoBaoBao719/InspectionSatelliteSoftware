@@ -1,2 +1,3 @@
 # gitignore handrail_model weights
 *.pth
+*.pt
