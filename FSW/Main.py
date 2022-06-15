@@ -562,39 +562,44 @@ def HIO_Main():
                 # cv.destroyAllWindows()
 
                 # Perform model inference on the returned path from the model              
-                #mask_result = Inference_Mask(img, INFERENCE_THRESHOLD)
+                mask_result = Inference_Mask(img, INFERENCE_THRESHOLD)
                 yolo_result = Inference_Yolo(img)
                 
                 ### DEBUGGING TABULATED DETECTION RESULTS ###
-                #displayResults(mask_result)
+                displayResults(mask_result)
 
                 # Test Debugging Dumb Mode
                 # det_dict = {0: {'bbox': [371.8197, 312.28333, 1514.4973, 665.65515], 'conf': 0.99867}, 1: {'bbox': [998.0732, 295.11374, 1515.9216, 582.3098], 'conf': 0.07558}}
 
-                #_bb, _conf = getBestResults(mask_result)
-                _bb, _conf = yolo_result
+                mask_bb, mask_conf = getBestResults(mask_result)
+                yolo_bb, yolo_conf = yolo_result
                 
-                print(_bb)
+                print("Mask Bbox: ", mask_bb, "\tYolo Bbox: ", yolo_bb)
+                print("Mask conf: ", mask_conf, "\tYolo conf: ", yolo_conf)
                 
-                if _bb is not None:
-                    x1 = _bb[0]
-                    y1 = _bb[1]
-                    x2 = _bb[2]
-                    y2 = _bb[3]
+                # Gather YOLO results
+                if yolo_bb is not None:
+                    ybbx1 = yolo_bb[0]
+                    ybby1 = yolo_bb[1]
+                    ybbx2 = yolo_bb[2]
+                    ybby2 = yolo_bb[3]
                     yd = 1
-                    cy = _conf
-                else:
-                    x1 = 0
-                    y1 = 0
-                    x2 = 0
-                    y2 = 0
-                    yd = 0
-                    cy = 0  
+                    cy = yolo_conf
+  
+                # Gather Mask results
+                if mask_bb is not None:
+                    mbbx1 = mask_bb[0]
+                    mbby1 = mask_bb[1]
+                    mbbx2 = mask_bb[2]
+                    mbby2 = mask_bb[3]
+                    md = 1
+                    cm = mask_conf 
 
                 # Encode Mask R-CNN results into bitstream
-                data_bytes = write_data_string(TYPE=HIO, PN=num_imgs, YD=yd, 
-                                                YBBX1=x1, YBBY1=y1, YBBX2=x2, YBBY2=y2, 
-                                                CY=cy, PIC=img, TEMP=getCPUTemp())
+                data_bytes = write_data_string(TYPE=HIO, PN=num_imgs, YD=yd, MD=md,
+                                                YBBX1=ybbx1, YBBY1=ybby1, YBBX2=ybbx2, YBBY2=ybby2, 
+                                                MBBX1=mbbx1, MBBY1=mbby1, MBBX2=mbbx2, MBBY2=mbby2,
+                                                CY=cy, CM=cm, PIC=img, TEMP=getCPUTemp())
                 HIO_data_string = bits2char(data_bytes)
                 # Write bitstream to serial comm
                 writeData(HIO_data_string)
