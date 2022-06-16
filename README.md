@@ -1,5 +1,5 @@
 # InspectionSatCV
-Maintains the code base for the InspectionSat HDD and HIO experiments that are slated to fly with the R5S4 6U spacecraft from the Seeker Lab at the NASA Johnson Space Center.
+This is where the HRVIP team maintains the code base for the InspectionSat Hard Disk Drive (HDD) and Handrail Identification in Orbit (HIO) experiments that are slated to fly with the R5S4 6U spacecraft from the Seeker Lab at the NASA Johnson Space Center. The HDD experiment is a technology demonstrator that will advance the Technology Readiness Level (TRL) for the utilization of low-cost, commcerically off the shelf (COTS), hard drives as reaction control wheels for small satellites. The HIO experiment is also a technology demonstration mission that aims to provide a proof-of-concept application of deep learning deployed on (COTS) edge compute x64 ARM-based devices in space. It will utilize two unique deep learning frameworks in order to identify and localize scale model handrails as feature landmarks for pose estimation of spacecraft orbiting the International Space Station in future work.
 
 ## Table of Contents
 - Installation
