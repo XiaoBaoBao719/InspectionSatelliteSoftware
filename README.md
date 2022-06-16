@@ -1,6 +1,24 @@
 # InspectionSatCV
 Maintains the code base for the InspectionSat HDD and HIO experiments that are slated to fly with the R5S4 6U spacecraft from the Seeker Lab at the NASA Johnson Space Center.
 
+## Table of Contents
+- Installation
+- How to use this repo
+- Future Work
+- Sources
+
+
+## Installation
+
+
+## How to use this repo
+
+
+## Future Work
+
+
+## Sources
+
 ## Detectron2 
 To compute mAP after a certain number of iteration, we need to use MyTrainer function instead of DefaultTrainer. Follow the steps:
 1. Train with DefaultTrainer. Comment out the evaluation period, and set the max iteration to a small number. 20 should work.
