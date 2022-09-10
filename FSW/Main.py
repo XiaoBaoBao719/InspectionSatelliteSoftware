@@ -22,19 +22,21 @@ TODO: CREATE A PINOUT TXT OR JSON THAT SETS ALL OF THE PIN LOCATIONS
 """
 # Use the correct version of Python...
 #!/usr/bin/env Python3
-
+import sys
+#testing importing all modules
+#sys.path.insert(0, '/home/pi/.local/lib/python3.7/site-packages')
 # =====================================
 # ==         CONFIGURATION           ==
 # =====================================
 import os
 import time
-import sys
 import numpy as np
 import RPi.GPIO as GPIO
 import serial
 import json
 import cv2 as cv
 import subprocess
+import csv
 from PIL import Image
 
 # TESTING: I2C EXTENDED BUS
@@ -49,6 +51,8 @@ from JSC_FLIGHT_HDD_EXP_V2 import HDD_ccw_drive, HDD_cw_drive, HDD_stop, HDD_pri
 from serial.serialutil import SerialException
 
 from Burnwire import Burnwire
+
+
 
 # Model Paths
 sys.path.insert(0, os.getcwd() + '/FSW')
@@ -75,7 +79,7 @@ NUM_BURNWIRES = 2
 # =====================================
 BAUDRATE = 19200 #115200
 SYS_TIMEOUT = 1 # seconds
-mini_UART = '/dev/ttyS0'
+mini_UART = '/dev/serial0'
 PL011 = '/dev/ttyAMA0'
 serial_zero = '/dev/serial0'
 SERIAL_PORT = serial_zero
@@ -155,7 +159,7 @@ def getCPUTemp():
     Parameters
     ----------
     output: string
-        Shell command to pull measured processor temperature
+        She``l command to pull measured processor temperature
     temperature: float
         CPU processing temperature in degrees Celsius by pulling a substring of output
     Returns
@@ -163,8 +167,9 @@ def getCPUTemp():
     True of the processor is within a temperature range set by MAX_TEMP
     False if the processor temperature exceeds allowable (system will auto throttle)
     """
-    output = subprocess.check_output(["vcgencmd", "measure_temp", "core"])
-    temperature = 50 #float(output[5:9])
+    #output = subprocess.check_output(["vcgencmd", "measure_temp", "core"])
+    output = subprocess.check_output(["vcgencmd", "measure_temp"])
+    temperature =  float(output[5:9])
     print('Current CPU Temp is :', temperature, " *C")
     return temperature
     
@@ -217,7 +222,8 @@ def writeData(results):
     ser.timeout=SYS_TIMEOUT
     ser.stopbits=serial.STOPBITS_ONE
     ser.bytesize=serial.EIGHTBITS
-
+    
+    result_mod = "(" + results + ")"
     try:
         print("Writing results...")
         ser.open()
@@ -225,7 +231,7 @@ def writeData(results):
         #temp = results.encode('utf-8')
         #print(temp)
         
-        num = ser.write(results.encode('utf-8'))
+        num = ser.write(result_mod.encode('utf-8'))
         print(results.encode('utf-8'))
         print(num)
         time.sleep(1)
@@ -424,7 +430,7 @@ def HDD_Main():
     # Start HDD Experiment
     print("Initiating HDD experiment...")
     #flashled(10)
-    sleep(2)
+    sleep(1)
     HDD_results = []
     HDD_timer = FSWTimer()
     tmp_timer = FSWTimer()
@@ -520,7 +526,7 @@ def HIO_Setup():
 def HIO_Main():
 
     print("Initiating HIO Experiment...")
-    sleep(2)
+    sleep(1)
     HIO_timer = FSWTimer()
     HIO_timer.start()
     
@@ -550,7 +556,8 @@ def HIO_Main():
             #img_capture = os.getcwd() + '/img_' + str(num_imgs) + '.jpg'
             
             # Test dummy data
-            img_capture = os.getcwd() + '/sample_img_2.jpg'
+            os.system("libcamera-jpeg -o sample.jpg --nopreview --rotation 180 -t10")
+            img_capture = os.getcwd() + '/sample.jpg'
             
             img = cv.imread(img_capture)
             
@@ -567,17 +574,20 @@ def HIO_Main():
                 
                 ### DEBUGGING TABULATED DETECTION RESULTS ###
                 displayResults(mask_result)
-
+                
+                # Test Dummy Data
+                #mask_result = {0: {'bbox': [371.8197, 312.28333, 1514.4973, 665.65515], 'conf': 0.99867}, 1: {'bbox': [998.0732, 295.11374, 1515.9216, 582.3098], 'conf': 0.07558}}
+                
                 # Test Debugging Dumb Mode
                 # det_dict = {0: {'bbox': [371.8197, 312.28333, 1514.4973, 665.65515], 'conf': 0.99867}, 1: {'bbox': [998.0732, 295.11374, 1515.9216, 582.3098], 'conf': 0.07558}}
 
                 mask_bb, mask_conf = getBestResults(mask_result)
                 yolo_bb, yolo_conf = yolo_result
                 
-                print("Mask Bbox: ", mask_bb, "\tYolo Bbox: ", yolo_bb)
+                print("Mask Bbox: ", mask_bb, "\tYoloBbox: ", yolo_bb)
                 print("Mask conf: ", mask_conf, "\tYolo conf: ", yolo_conf)
-                
-                # Gather YOLO results
+               
+               # Gather YOLO results
                 if yolo_bb is not None:
                     ybbx1 = yolo_bb[0]
                     ybby1 = yolo_bb[1]
@@ -585,26 +595,46 @@ def HIO_Main():
                     ybby2 = yolo_bb[3]
                     yd = 1
                     cy = yolo_conf
-  
-                # Gather Mask results
-                if mask_bb is not None:
+                else:
+                    ybbx1 = 0
+                    ybby1 = 0
+                    ybbx2 = 0
+                    ybby2 = 0
+                    ybbyd = 0
+                    yd = 0
+                    cy = 0
+                    
+                    # Gather Mask results
+                if (mask_bb is not None) and (len(mask_bb) is not 0):
                     mbbx1 = mask_bb[0]
                     mbby1 = mask_bb[1]
                     mbbx2 = mask_bb[2]
                     mbby2 = mask_bb[3]
                     md = 1
-                    cm = mask_conf 
+                    cm = mask_conf
+                else:
+                    mbbx1 = 0
+                    mbby1 = 0
+                    mbbx2 = 0
+                    mbby2 = 0
+                    md = 0
+                    cm = 0
 
                 # Encode Mask R-CNN results into bitstream
-                data_bytes = write_data_string(TYPE=HIO, PN=num_imgs, YD=yd, MD=md,
-                                                YBBX1=ybbx1, YBBY1=ybby1, YBBX2=ybbx2, YBBY2=ybby2, 
-                                                MBBX1=mbbx1, MBBY1=mbby1, MBBX2=mbbx2, MBBY2=mbby2,
+                data_bytes = write_data_string(TYPE=HIO, PN=num_imgs, YD=yd, MD=md, 
+                                                YBBX1=ybbx1, YBBY1=ybby1, YBBX2=ybbx2, YBBY2=ybby2,
+                                                MBBX1=mbbx1, MBBY1=mbby1, MBBX2=mbbx2, MBBY2=mbby2, 
                                                 CY=cy, CM=cm, PIC=img, TEMP=getCPUTemp())
                 HIO_data_string = bits2char(data_bytes)
                 # Write bitstream to serial comm
                 writeData(HIO_data_string)
                 num_imgs += 1
                 writeStateVariable(STATE_VAR_PATH, "NUMBER_IMAGES", num_imgs)
+                
+                comm_path = os.getcwd() + '/comms_sent.csv'
+                with open(comm_path, 'a', newline='') as comm_csv: # Write to csv file
+                    writer = csv.writer(comm_csv)
+                    writer.writerow([HIO_data_string])
                 
             elif img_capture is None:
                 print(" IMAGE NOT CAPTURED! Trying again...")
@@ -664,7 +694,7 @@ def main():
         HDD_Main()
         writeStateVariable(STATE_VAR_PATH, "HDD_DONE", "true")
     
-    sleep(2) # Wait 10 minutes for steady-state
+    sleep(1) # Wait 10 minutes for steady-state
     
     #print("HIO deploy done check:", deployed)
     #print(deployed)
@@ -674,7 +704,7 @@ def main():
         HIO_Setup()
         writeStateVariable(STATE_VAR_PATH, "DEPLOYED", "true")
     
-    sleep(2)
+    sleep(1)
     HIO_Main()
     
     # Print final S/C State Variables
@@ -683,9 +713,8 @@ def main():
     # Clean up system
     os.system ("sudo killall pigpiod")
     print("Goodbye!")
-    sleep(2)
+    sleep(1)
 
 if (__name__ == "__main__"):
     main()
-    
-    
+        
