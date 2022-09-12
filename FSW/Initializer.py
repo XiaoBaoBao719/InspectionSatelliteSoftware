@@ -24,8 +24,8 @@ def main():
 
     # Python object
     initial_vars = {"HARDWARE_ERROR" : "false", 
-                    "HDD_DONE" : "false",
-                    "NUMBER_HDD_RUNS" : 0,
+                    "HDD_DONE" : "true",
+                    "NUMBER_HDD_RUNS" : 5,
                     "DEPLOYED" : "false", 
                     "BURNWIRE_FIRED" : "false",
                     "BOOT_COUNTER": 0, 
