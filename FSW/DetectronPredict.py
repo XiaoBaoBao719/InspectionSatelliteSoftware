@@ -130,7 +130,7 @@ def showResults(img, bbox):
 # ### FOR DEBUGGING PURPOSES ###
 
 # model_filename = os.getcwd()+'/handrail_output.pth'    #located in output.zip folder
-<<<<<<< HEAD
+
 im = cv2.imread(os.getcwd()+"/sample_img.jpg")     #located in same directory as inference_mask.py
 inference_threshold = 0.02
 
@@ -139,16 +139,7 @@ print(det_dict)
 displayResults(det_dict, im)
 _bbox, _conf = getBestResults(det_dict)
 showResults(im, _bbox)
-=======
-# im = cv2.imread(os.getcwd()+"/FSW/sample_img.jpg")     #located in same directory as inference_mask.py
-# inference_threshold = 0.02
 
-# det_dict = Inference_Mask(im, inference_threshold)
-# print(det_dict)
-# displayResults(det_dict, im)
-# _bbox, _conf = getBestResults(det_dict)
-# showResults(im, _bbox)
->>>>>>> fd40ed10c72d2d292dc9a0d6c93a42af968da4ce
 
 
 # cv2.rectangle(im, (50, 50), (100, 100), (0,255,0), 3)
