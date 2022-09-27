@@ -2,23 +2,17 @@
 @author: Xiao-Bao Bao
 @license: GNU Commons
 @version 1.0
-
 @brief Master Python source file (primary function file)
-
 This is the master file for the main function of the InspectionCV primary payload
 and performs the needed schedule function calls for the flight computer's data collection.
 Primary functions include: 
 1. Payload deployment
 2. Invoking model inference results
 3. Serial data packet comm to the S/C FC
-
 Req: 
 Python 3.7.3
 pySerial
-
-
 TODO: CREATE A PINOUT TXT OR JSON THAT SETS ALL OF THE PIN LOCATIONS 
-
 """
 # Use the correct version of Python...
 #!/usr/bin/env Python3
@@ -262,7 +256,6 @@ def writeData(results):
 def readStateVariable(file, state_var):
     """ Reads a JSON file that holds the state variables and returns a string set based on the 
         requested input message
-
         file : string
             file is a link to the filepath holding the json state variables
         state_var : string 
@@ -290,7 +283,6 @@ def readStateVariable(file, state_var):
 
 def writeStateVariable(file, state_var, new_val):
     """ Writes to a JSON file that holds the
-
         file : string
             file is a link to the filepath holding the json state variables
         state_var : string 
@@ -717,4 +709,3 @@ def main():
 
 if (__name__ == "__main__"):
     main()
-        
