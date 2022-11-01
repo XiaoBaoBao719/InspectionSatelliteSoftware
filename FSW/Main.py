@@ -2,23 +2,17 @@
 @author: Xiao-Bao Bao
 @license: GNU Commons
 @version 1.0
-
 @brief Master Python source file (primary function file)
-
 This is the master file for the main function of the InspectionCV primary payload
 and performs the needed schedule function calls for the flight computer's data collection.
 Primary functions include: 
 1. Payload deployment
 2. Invoking model inference results
 3. Serial data packet comm to the S/C FC
-
 Req: 
 Python 3.7.3
 pySerial
-
-
 TODO: CREATE A PINOUT TXT OR JSON THAT SETS ALL OF THE PIN LOCATIONS 
-
 """
 # Use the correct version of Python...
 #!/usr/bin/env Python3
@@ -262,7 +256,6 @@ def writeData(results):
 def readStateVariable(file, state_var):
     """ Reads a JSON file that holds the state variables and returns a string set based on the 
         requested input message
-
         file : string
             file is a link to the filepath holding the json state variables
         state_var : string 
@@ -290,7 +283,6 @@ def readStateVariable(file, state_var):
 
 def writeStateVariable(file, state_var, new_val):
     """ Writes to a JSON file that holds the
-
         file : string
             file is a link to the filepath holding the json state variables
         state_var : string 
@@ -584,8 +576,8 @@ def HIO_Main():
                 mask_bb, mask_conf = getBestResults(mask_result)
                 yolo_bb, yolo_conf = yolo_result
                 
-                print("Mask Bbox: ", mask_bb, "\tYoloBbox: ", yolo_bb)
-                print("Mask conf: ", mask_conf, "\tYolo conf: ", yolo_conf)
+                print("Mask Bbox: ", mask_bb, "\nYoloBbox: ", yolo_bb)
+                print("Mask conf: ", mask_conf, "\nYolo conf: ", yolo_conf)
                
                # Gather YOLO results
                 if yolo_bb is not None:
@@ -625,6 +617,9 @@ def HIO_Main():
                                                 YBBX1=ybbx1, YBBY1=ybby1, YBBX2=ybbx2, YBBY2=ybby2,
                                                 MBBX1=mbbx1, MBBY1=mbby1, MBBX2=mbbx2, MBBY2=mbby2, 
                                                 CY=cy, CM=cm, PIC=img, TEMP=getCPUTemp())
+                
+                print(data_bytes)      # remove
+                
                 HIO_data_string = bits2char(data_bytes)
                 # Write bitstream to serial comm
                 writeData(HIO_data_string)
@@ -717,4 +712,3 @@ def main():
 
 if (__name__ == "__main__"):
     main()
-        
