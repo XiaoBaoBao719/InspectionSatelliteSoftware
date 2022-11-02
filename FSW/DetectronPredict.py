@@ -90,7 +90,7 @@ def displayResults(detections,showImage=None):
         # print("bbox yo", bbox)
         # print("conf ay", conf)
 
-        #showResults(annoted, bbox)
+        showResults(annoted, bbox)
 
 def getBestResults(detections):
     bestBox = []
