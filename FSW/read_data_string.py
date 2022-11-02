@@ -9,6 +9,7 @@ def read_data_string(bits):
     See definition of numbers in write_data_string.py
     sorry I'm so rusty in python
     """
+    
     m = 1080
     n = 1920
 
@@ -30,13 +31,11 @@ def read_data_string(bits):
         MBBX2 = (m/16) * (0.5 + bits[32] + 2*bits[33] + 4*bits[34] + 8*bits[35])
         MBBY2 = (n/16) * (0.5 + bits[36] + 2*bits[37] + 4*bits[38] + 8*bits[39])
 
-        c_map  = np.array([ 0,10,20,25,30,35,40,45,50,53,56,59,62,65,68,71,74,76,78,80,82,84,86,88,90,92,94,95,96,97,98, 99])
-        c_map2 = np.array([10,20,25,30,35,40,45,50,53,56,59,62,65,68,71,74,76,78,80,82,84,86,88,90,92,94,95,96,97,98,99,100])
-        c_map = 0.5*(c_map + c_map2)
-        temp = bits[40] + 2*bits[41] + 4*bits[42] + 8*bits[43] + 16*bits[44]
-        CY = c_map[temp]
-        temp = bits[45] + 2*bits[46] + 4*bits[47] + 8*bits[48] + 16*bits[49]
-        CM = c_map[temp]
+        Conf_Map = np.array ([ 5, 15, 22.5, 27.5, 32.5, 37.5, 42.5, 47.5, 51.5, 54.5, 57.5, 60.5, 63.5, 66.5, 69.5, 72.5, 75, 77, 79, 81, 83, 85, 87, 89, 91, 93, 94.5, 95.5, 96.5, 97.5, 98.5, 99.5])
+        tempY = bits[40] + 2*bits[41] + 4*bits[42] + 8*bits[43] + 16*bits[44]
+        CY = Conf_Map[tempY]
+        tempM = bits[45] + 2*bits[46] + 4*bits[47] + 8*bits[48] + 16*bits[49]
+        CM = Conf_Map[tempM]
 
         #grayscale values
         Q30 = (256/16) * (0.5 + bits[50] + 2*bits[51] + 4*bits[52] + 8*bits[53])
@@ -114,3 +113,4 @@ def read_data_string(bits):
     CS = (cs1 == bits[88]) and (cs2 == bits[89])
     data[data.size-1] = CS
     return data
+

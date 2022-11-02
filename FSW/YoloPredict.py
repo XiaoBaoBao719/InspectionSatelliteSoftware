@@ -10,10 +10,12 @@ Last Edited: 6/13/22, Xiao-Bao Bao
 
 # Setup 
 import yolov5
+import torch
 import os
 
 # load custom trained model weights
-model_path = os.getcwd() + '/FSW/yolo_model.pt'
+model_path = os.getcwd() + '/yolo_model.pt'
+#model = torch.hub.load('ultralytics/yolov5', 'custom', path = model_path)
 model = yolov5.load(model_path)
 
 # set model parameters
@@ -43,9 +45,11 @@ def Inference_Yolo(_img):
     results.show()
 
     # Pull the top bbox, conf score
-    best_box = boxes[0].tolist()
-    best_conf = scores[0].item()
-
+    if(list(boxes.size())[0] != 0) and (list(scores.size())[0] != 0):
+        best_box = boxes[0].tolist()
+        best_conf = scores[0].item()
+    else:
+        return None, None
     # save results into "results/" folder
     #results.save(save_dir='results/')
     # Convert from tensor
