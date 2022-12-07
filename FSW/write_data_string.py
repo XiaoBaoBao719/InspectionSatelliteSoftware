@@ -96,14 +96,12 @@ def write_data_string(TYPE=0,PN=0,YD=0,MD=0,YBBX1=0,YBBY1=0,YBBX2=0,YBBY2=0,
             bits[11 + 4*i] = (bb[i] % 16)>7.5
 
         # confidence map is custom
-        CY = CY*100
-        CM = CM*100
-        CY = min(100, CY)
-        CY = max(  0, CY)
-        CM = min(100, CM) 
-        CM = max(  0, CM)
+        CY = min(100, CY*100)
+        CY = max(  0, CY*100)
+        CM = min(100, CM*100) 
+        CM = max(  0, CM*100)
         c_map = np.array([0,10,20,25,30,35,40,45,50,53,56,59,62,65,68,71,74,76,78,80,82,84,86,88,90,92,94,95,96,97,98,99])
-        print("write Mask conf: ", CM, "\n write Yolo conf: ", CY)
+        
         count = 0
         for c in c_map:
             if CY > c:
@@ -119,8 +117,7 @@ def write_data_string(TYPE=0,PN=0,YD=0,MD=0,YBBX1=0,YBBY1=0,YBBX2=0,YBBY2=0,
                 bits[48] = (count % 16)> 7.5
                 bits[49] = (count % 32)>15.5
             count += 1
-        #print("CY bits: ",bits[44], " ", bits[43], " ", bits[42], " ", bits[41], " ",bits[40])  #delete
-        #print("CM bits: ",bits[49], " ", bits[48], " ", bits[47], " ", bits[46], " ",bits[45]) #delete
+    
         #PIC_G = np.reshape(PIC_G, (m*n,1))
         PIC_G = np.sort(PIC_G, axis=None) #axis "none" should remove need to reshape
         Q30 = math.floor(PIC_G[round(0.3 * m*n)]/16)
@@ -143,7 +140,7 @@ def write_data_string(TYPE=0,PN=0,YD=0,MD=0,YBBX1=0,YBBY1=0,YBBX2=0,YBBY2=0,
         bits[62] = (Q90 %  2)
         bits[63] = (Q90 %  4)>1.5
         bits[64] = (Q90 %  8)>3.5
-        bits[65] = (Q90 % 16)>7.
+        bits[65] = (Q90 % 16)>7.5
         
         for i in range(3):
             PV = math.floor(PIX[i]/4)
