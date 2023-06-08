@@ -146,4 +146,3 @@ showResults(im, _bbox)
 # cv2.imshow("test", im)
 # cv2.waitKey(0)
 # cv2.destroyAllWindows()
-

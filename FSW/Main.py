@@ -46,10 +46,8 @@ from serial.serialutil import SerialException
 
 from Burnwire import Burnwire
 
-
-
 # Model Paths
-sys.path.insert(0, os.getcwd() + '/FSW')
+sys.path.insert(0, os.getcwd())
 sys.path.insert(0, os.getcwd() + '/Detectron2')
 sys.path.insert(0, os.getcwd() + 'YOLOv5')
 from DetectronPredict import Inference_Mask, displayResults, getBestResults
@@ -67,6 +65,7 @@ from write_data_string import write_data_string
 # ==         DEPLOYMENT VARS         ==
 # =====================================
 NUM_BURNWIRES = 2
+ACCESSORY_PWR = 26
 
 # =====================================
 # ==       COMMS GLOBAL VARS         ==
@@ -106,6 +105,7 @@ delta = 50
 SCIENCE = False
 MAX_TEMP = 85 # measured in degrees C (see datasheet -20C - +85C)
 INTERVAL_LENGTH = 10000 # 10 minutes - time between image captures
+SLEEP_TIME = 10 # in seconds
 
 parameterDB_path_name = '\home\pi\Desktop\ParameterDB'
 STATE_VAR_NAME = "STATE_VARIABLES.json"
@@ -119,7 +119,7 @@ global global_timer
 HDD = 0 # Used for writing bitstream to JSC
 HIO = 1 # Used for writing bitstream to JSC
 
-LED = 26 # GPIO14, not used
+LED = 21 # GPIO21, not used
 
 def flashled(num):
     for i in range(num):
@@ -146,6 +146,7 @@ def initializeComputer():
     GPIO.setmode(GPIO.BCM)
     GPIO.setwarnings(False)
     GPIO.setup(LED,GPIO.OUT)
+    GPIO.setup(ACCESSORY_PWR, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
     
 
 def getCPUTemp():
@@ -416,7 +417,7 @@ def setup():
     sleep(2)
     
 TOTAL_HDD_EXPERIMENTS = 4  # number experiments to perform
-TIME_PER_HDD = 120 # 5 mins between each experiment
+TIME_PER_HDD = 1*60 # 5 mins between each experiment
 
 def HDD_Main():
     # Start HDD Experiment
@@ -428,8 +429,7 @@ def HDD_Main():
     tmp_timer = FSWTimer()
     HDD_timer.start()
     tmp_timer.start()
-
-    last_results = []
+    
     curr_results = []
     num_runs = 1
     hdd_bytes = ""
@@ -437,48 +437,51 @@ def HDD_Main():
     print("\n+++++++++++++++ STARTING HDD +++++++++++++++")
     sleep(1)
     #reference()
-    while num_runs <= TOTAL_HDD_EXPERIMENTS:
-        if (tmp_timer.elapsed_time() % TIME_PER_HDD >= 0):
-            print("\nRunning HDD experiment: ", num_runs)
-            print(f"Elapsed time: {tmp_timer.elapsed_time():0.4f} seconds")
-            curr_results = doHDD(1)
-            HDD_results.append(curr_results)
-            
-            print("Run successful!")
-            # sleep(TIME_PER_HDD) # Wait for system to settle after 5 mins
-            wxa = curr_results[0]
-            wxb = curr_results[3]
-            wxc = curr_results[6]
-            wya = curr_results[1]
-            wyb = curr_results[4]
-            wyc = curr_results[7]
-            wza = curr_results[2]
-            wzb = curr_results[5]
-            wzc = curr_results[8]
-            cd  = curr_results[9]
+    if permission():
+        #if (HDD_timer.elapsed_time() >= TIME_PER_HDD):
+        print("\nRunning HDD experiment: ", num_runs)
+        print(f"Elapsed time: {HDD_timer.elapsed_time():0.4f} seconds")
+        curr_results = doHDD(1)
+        HDD_results.append(curr_results)
+        
+        print("Run successful!")
+        # sleep(TIME_PER_HDD) # Wait for system to settle after 5 mins
+        wxa = curr_results[0]
+        wxb = curr_results[3]
+        wxc = curr_results[6]
+        wya = curr_results[1]
+        wyb = curr_results[4]
+        wyc = curr_results[7]
+        wza = curr_results[2]
+        wzb = curr_results[5]
+        wzc = curr_results[8]
+        T_a = curr_results[9]
+        T_b = curr_results[10]
+        T_c = curr_results[11]
+        cd  = curr_results[12]
 
-            # Write HDD results to UCD Data buffer
-            print("Writing HDD data to buffer...")
-            hdd_bytes = write_data_string(TYPE=HDD, XN=num_runs, WXA=wxa, WXB=wxb, WXC=wxc, 
-                                            WYA=wya, WYB=wyb, WYC=wyc, WZA=wza, WZB=wzb, WZC=wzc,
-                                            CD=cd, TEMP=getCPUTemp())
-            hdd_data_string = bits2char(hdd_bytes)
-            writeData(hdd_data_string)
-            tmp_timer = FSWTimer()
-            tmp_timer.start()
+        # Write HDD results to UCD Data buffer
+        print("Writing HDD data to buffer...")
+        hdd_bytes = write_data_string(TYPE=HDD, XN=num_runs, WXA=wxa, WXB=wxb, WXC=wxc, 
+                                        WYA=wya, WYB=wyb, WYC=wyc, WZA=wza, WZB=wzb, WZC=wzc,
+                                        TA=T_a,TB=T_b,TC=T_c,CD=cd, TEMP=getCPUTemp())
+        hdd_data_string = bits2char(hdd_bytes)
+        writeData(hdd_data_string)
+        tmp_timer = FSWTimer()
+        tmp_timer.start()
         # Update
         num_runs += 1
         writeStateVariable(STATE_VAR_PATH, "NUMBER_HDD_RUNS", num_runs)
         
     print(f"Total Elapsed HDD time: {HDD_timer.elapsed_time():0.4f} seconds")
     HDD_timer.stop()
-    hdd_done = True
-    writeStateVariable(STATE_VAR_PATH, "HDD_DONE", True)
-    
+    print("sleep HDD")
+    time.sleep(SLEEP_TIME)
+    print("arise")
     pass
 
 
-TIME_PER_HIO = 4*60 # minutes
+TIME_PER_HIO = 1*60 #5 minutes between experiments
 MAX_IMGS = 2
 INFERENCE_THRESHOLD = 0.4
 model_filename = os.getcwd()+'/handrail_output.pth'    #located in output.zip folder
@@ -491,7 +494,7 @@ def HIO_Setup():
     # Runs .burn() for both pins
     
     # if burnwire_fired == "false":
-    # SETUP AND DEPLOY BURNWIRE 
+    # SETUP AND DEPLOY BURNWIRE
     burnwire = Burnwire(NUM_BURNWIRES)
     burnwire.getBurnwireStatus()
     sleep(1)
@@ -519,8 +522,8 @@ def HIO_Main():
 
     print("Initiating HIO Experiment...")
     sleep(1)
-    HIO_timer = FSWTimer()
-    HIO_timer.start()
+    #HIO_timer = FSWTimer()
+    #HIO_timer.start()
     
     num_imgs_str = readStateVariable(STATE_VAR_PATH, "NUMBER_IMAGES")
     try:
@@ -531,128 +534,133 @@ def HIO_Main():
         print(num_imgs_str)
         num_imgs = 1
 
-    if num_imgs > MAX_IMGS:
-        print("Already finished taking specified number of images")
-        return # << bad design, recommend changing
-
     print("\n+++++++++++++++ THE EYE OF HIO OPENS ITS BALEFUL GAZE +++++++++++++++")
-    while num_imgs <= MAX_IMGS:
         # if the elapsed time on the timer thread is a multiple of the timer interval 
         # threshold, perform data aquisition
-        if (HIO_timer.elapsed_time() % TIME_PER_HIO >= 0):
-            # Take a picture
-            # img_capture = picam.takePicture("test{num}_gain_{gain}.jpg".format(num = picam.getNumPicsTake(), 
-            #                                                     gain = picam.getGainVal()))
-            
-            #camera_run(num_imgs)  #take picture and save to cwd
-            #img_capture = os.getcwd() + '/img_' + str(num_imgs) + '.jpg'
-            
-            # Test dummy data
-            os.system("libcamera-jpeg -o sample.jpg --nopreview --rotation 180 -t10")
-            img_capture = os.getcwd() + '/sample.jpg'
-            
-            img = cv.imread(img_capture)
-            
-            # Push results of data aquisition to a local folder and return the path
-            if img_capture is not img:
-                # Debugging: show the image
-                # cv.imshow("debug img", img)
-                # cv.waitKey(0)
-                # cv.destroyAllWindows()
-
-                # Perform model inference on the returned path from the model              
-                mask_result = Inference_Mask(img, INFERENCE_THRESHOLD)
-                yolo_result = Inference_Yolo(img)
-                
-                ### DEBUGGING TABULATED DETECTION RESULTS ###
-                displayResults(mask_result)
-                
-                # Test Dummy Data
-                #mask_result = {0: {'bbox': [371.8197, 312.28333, 1514.4973, 665.65515], 'conf': 0.99867}, 1: {'bbox': [998.0732, 295.11374, 1515.9216, 582.3098], 'conf': 0.07558}}
-                
-                # Test Debugging Dumb Mode
-                # det_dict = {0: {'bbox': [371.8197, 312.28333, 1514.4973, 665.65515], 'conf': 0.99867}, 1: {'bbox': [998.0732, 295.11374, 1515.9216, 582.3098], 'conf': 0.07558}}
-
-                mask_bb, mask_conf = getBestResults(mask_result)
-                yolo_bb, yolo_conf = yolo_result
-                
-                print("Mask Bbox: ", mask_bb, "\nYoloBbox: ", yolo_bb)
-                print("Mask conf: ", mask_conf, "\nYolo conf: ", yolo_conf)
-               
-               # Gather YOLO results
-                if yolo_bb is not None:
-                    ybbx1 = yolo_bb[0]
-                    ybby1 = yolo_bb[1]
-                    ybbx2 = yolo_bb[2]
-                    ybby2 = yolo_bb[3]
-                    yd = 1
-                    cy = yolo_conf
-                else:
-                    ybbx1 = 0
-                    ybby1 = 0
-                    ybbx2 = 0
-                    ybby2 = 0
-                    ybbyd = 0
-                    yd = 0
-                    cy = 0
-                    
-                    # Gather Mask results
-                if (mask_bb is not None) and (len(mask_bb) is not 0):
-                    mbbx1 = mask_bb[0]
-                    mbby1 = mask_bb[1]
-                    mbbx2 = mask_bb[2]
-                    mbby2 = mask_bb[3]
-                    md = 1
-                    cm = mask_conf
-                else:
-                    mbbx1 = 0
-                    mbby1 = 0
-                    mbbx2 = 0
-                    mbby2 = 0
-                    md = 0
-                    cm = 0
-
-                # Encode Mask R-CNN results into bitstream
-                data_bytes = write_data_string(TYPE=HIO, PN=num_imgs, YD=yd, MD=md, 
-                                                YBBX1=ybbx1, YBBY1=ybby1, YBBX2=ybbx2, YBBY2=ybby2,
-                                                MBBX1=mbbx1, MBBY1=mbby1, MBBX2=mbbx2, MBBY2=mbby2, 
-                                                CY=cy, CM=cm, PIC=img, TEMP=getCPUTemp())
-                
-                print(data_bytes)      # remove
-                
-                HIO_data_string = bits2char(data_bytes)
-                # Write bitstream to serial comm
-                writeData(HIO_data_string)
-                num_imgs += 1
-                writeStateVariable(STATE_VAR_PATH, "NUMBER_IMAGES", num_imgs)
-                
-                comm_path = os.getcwd() + '/comms_sent.csv'
-                with open(comm_path, 'a', newline='') as comm_csv: # Write to csv file
-                    writer = csv.writer(comm_csv)
-                    writer.writerow([HIO_data_string])
-                
-            elif img_capture is None:
-                print(" IMAGE NOT CAPTURED! Trying again...")
-                continue
-        sleep(1)
+    #if (HIO_timer.elapsed_time() >= TIME_PER_HIO):
+        # Take a picture
+        # img_capture = picam.takePicture("test{num}_gain_{gain}.jpg".format(num = picam.getNumPicsTake(), 
+        #                                                     gain = picam.getGainVal()))
         
+        #camera_run(num_imgs)  #take picture and save to cwd
+        #img_capture = os.getcwd() + '/img_' + str(num_imgs) + '.jpg'
+        
+        # Test dummy data
+    print("Using sample image - NOT LIVE PHOTO")
+    os.system("libcamera-jpeg -o sample.jpg --nopreview --rotation 180 -t10")
+    img_capture = os.getcwd() + '/sample.jpg'
+    
+    img = cv.imread(img_capture)
+    
+    # Push results of data aquisition to a local folder and return the path
+    if img_capture is not img:
+        # Debugging: show the image
+        # cv.imshow("debug img", img)
+        # cv.waitKey(0)
+        # cv.destroyAllWindows()
+
+        # Perform model inference on the returned path from the model              
+        mask_result = Inference_Mask(img, INFERENCE_THRESHOLD)
+        yolo_result = Inference_Yolo(img)
+        
+        ### DEBUGGING TABULATED DETECTION RESULTS ###
+        displayResults(mask_result)
+        
+        # Test Dummy Data
+        #mask_result = {0: {'bbox': [371.8197, 312.28333, 1514.4973, 665.65515], 'conf': 0.99867}, 1: {'bbox': [998.0732, 295.11374, 1515.9216, 582.3098], 'conf': 0.07558}}
+        
+        # Test Debugging Dumb Mode
+        # det_dict = {0: {'bbox': [371.8197, 312.28333, 1514.4973, 665.65515], 'conf': 0.99867}, 1: {'bbox': [998.0732, 295.11374, 1515.9216, 582.3098], 'conf': 0.07558}}
+
+        mask_bb, mask_conf = getBestResults(mask_result)
+        yolo_bb, yolo_conf = yolo_result
+        
+        print("Mask Bbox: ", mask_bb, "\nYoloBbox: ", yolo_bb)
+        print("Mask conf: ", mask_conf, "\nYolo conf: ", yolo_conf)
+       
+       # Gather YOLO results
+        if yolo_bb is not None:
+            ybbx1 = yolo_bb[0]
+            ybby1 = yolo_bb[1]
+            ybbx2 = yolo_bb[2]
+            ybby2 = yolo_bb[3]
+            yd = 1
+            cy = yolo_conf
+        else:
+            ybbx1 = 0
+            ybby1 = 0
+            ybbx2 = 0
+            ybby2 = 0
+            ybbyd = 0
+            yd = 0
+            cy = 0
+            
+            # Gather Mask results
+        if (mask_bb is not None) and (len(mask_bb) is not 0):
+            mbbx1 = mask_bb[0]
+            mbby1 = mask_bb[1]
+            mbbx2 = mask_bb[2]
+            mbby2 = mask_bb[3]
+            md = 1
+            cm = mask_conf
+        else:
+            mbbx1 = 0
+            mbby1 = 0
+            mbbx2 = 0
+            mbby2 = 0
+            md = 0
+            cm = 0
+
+        # Encode Mask R-CNN results into bitstream
+        data_bytes = write_data_string(TYPE=HIO, PN=num_imgs, YD=yd, MD=md, 
+                                        YBBX1=ybbx1, YBBY1=ybby1, YBBX2=ybbx2, YBBY2=ybby2,
+                                        MBBX1=mbbx1, MBBY1=mbby1, MBBX2=mbbx2, MBBY2=mbby2, 
+                                        CY=cy, CM=cm, PIC=img, TEMP=getCPUTemp())
+        
+        print(data_bytes)      # remove
+        
+        HIO_data_string = bits2char(data_bytes)
+        # Write bitstream to serial comm
+        writeData(HIO_data_string)
+        num_imgs += 1
+        writeStateVariable(STATE_VAR_PATH, "NUMBER_IMAGES", num_imgs)
+        
+        comm_path = os.getcwd() + '/comms_sent.csv'
+        with open(comm_path, 'a', newline='') as comm_csv: # Write to csv file
+            writer = csv.writer(comm_csv)
+            writer.writerow([HIO_data_string])
+        
+        #reset timer
+        #HIO_timer.stop()
+        #HIO_timer.start()
+            
+    elif img_capture is None:
+        print(" IMAGE NOT CAPTURED! Stopping Experiment") #Trying again...")
+        #continue
+    sleep(1)
     # Check S/C state again   
     getSpacecraftState(STATE_VAR_PATH)  
+
+def permission():
+    while GPIO.input(ACCESSORY_PWR) == 0:
+        sleep(1)
+        print("Waiting for permission to run")
+    return 1
 
 def main():
     # Check State Variables
     
     # Attempt to read and increment the boot counter
-    boot_counter_str = readStateVariable(STATE_VAR_PATH, "BOOT_COUNTER")
-    try:
-        current_num_boots = int(boot_counter_str[0]) # Get the state variable for BOOT_COUNTER
-    except Exception as e:
-        print("Issue with reading for the state variable: BOOT_COUNTER!")
-        print(e)
-        print(boot_counter_str)
-        current_num_boots = 0
-    current_num_boots += 1
-    writeStateVariable(STATE_VAR_PATH, "BOOT_COUNTER", current_num_boots)
+#    boot_counter_str = readStateVariable(STATE_VAR_PATH, "BOOT_COUNTER")
+#    try:
+#        current_num_boots = int(boot_counter_str[0]) # Get the state variable for BOOT_COUNTER
+#    except Exception as e:
+#        print("Issue with reading for the state variable: BOOT_COUNTER!")
+#        print(e)
+#        print(boot_counter_str)
+#        current_num_boots = 0
+#    current_num_boots += 1
+#    writeStateVariable(STATE_VAR_PATH, "BOOT_COUNTER", current_num_boots)
 
     # Check if we already ran HDD experiment
     read_out = readStateVariable(STATE_VAR_PATH, "HDD_DONE") 
@@ -685,9 +693,9 @@ def main():
     #print(type(hdd_done))
     #print(hdd_done == "false")
     
-    if hdd_done == "false":
+    if hdd_done == "false" and permission():
         HDD_Main()
-        writeStateVariable(STATE_VAR_PATH, "HDD_DONE", "true")
+        #writeStateVariable(STATE_VAR_PATH, "HDD_DONE", "true")
     
     sleep(1) # Wait 10 minutes for steady-state
     
@@ -695,12 +703,15 @@ def main():
     #print(deployed)
     #print(type(deployed))
     
-    if deployed == "false" or burnwire_fired == "false":
+    if (deployed == "false" or burnwire_fired == "false") and permission():
         HIO_Setup()
         writeStateVariable(STATE_VAR_PATH, "DEPLOYED", "true")
+        HIO_Main()
     
     sleep(1)
-    HIO_Main()
+    while 1:
+        HDD_Main()
+        HIO_Main()
     
     # Print final S/C State Variables
     getSpacecraftState(STATE_VAR_PATH)

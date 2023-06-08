@@ -27,3 +27,4 @@ def bits2char(bits):
         data_out[i] = key[num]
     data_out = "".join(data_out)
     return data_out
+

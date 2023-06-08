@@ -18,13 +18,14 @@ from time import sleep
 # =====================================
 #PD_POS = 20 # Photodiode GPIO20 
 #INPUT_PIN = 10
+BURN_EN    =  6 # GPIO 6
 BURN_PIN_1 = 12 # GPIO12
 BURN_PIN_2 = 13 # GPIO13
 BURN_CHANNELS = (BURN_PIN_1, BURN_PIN_2)
 
 DEF_DUTY_CYCLE = 100 # percentage
 DEF_FREQ = 500 # khz
-DEF_DUR = 5 # seconds
+DEF_DUR =  5 # seconds
 
 class Burnwire:
     
@@ -35,7 +36,7 @@ class Burnwire:
     burn_status_1 = False
     burn_status_2 = False
     # freq = 500 # kHz
-    duty_cyle = 0 # % percentage
+    duty_cyle = 100 # % percentage
     
     """
     def __init__(self, num_burnwires=2, init_freq=DEF_FREQ, init_duty_cycle=DEF_DUTY_CYCLE):
@@ -61,7 +62,9 @@ class Burnwire:
         print("Initializing burnwires")
         GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(False)
+        GPIO.setup(BURN_EN, GPIO.OUT)
         GPIO.setup(BURN_CHANNELS, GPIO.OUT)
+        GPIO.output(BURN_EN, GPIO.LOW)
         GPIO.output(BURN_CHANNELS, GPIO.LOW)
         self.burn_status_1 = False
         self.burn_status_2 = False
@@ -99,12 +102,14 @@ class Burnwire:
             if channel == 1:
                 # self.burn_pwm_1.ChangeFrequency(self.freq)
                 # self.burn_pwm_1.ChangeDutyCycle(self.duty_cycle)
+                GPIO.output(BURN_EN,    GPIO.HIGH)
                 GPIO.output(BURN_PIN_1, GPIO.HIGH)
                 self.burn_status_1 = True
                 
             if channel == 2:
                 # self.burn_pwm_2.ChangeFrequency(self.freq)
                 # self.burn_pwm_2.ChangeDutyCycle(self.duty_cycle)
+                GPIO.output(BURN_EN,    GPIO.HIGH)
                 GPIO.output(BURN_PIN_2, GPIO.HIGH)
                 self.burn_status_2 = True
             sleep(0.2)
@@ -132,7 +137,8 @@ class Burnwire:
         # self.burn_pwm_2.stop()
         print("Cleaning up burnwire...")
         GPIO.output(BURN_CHANNELS, GPIO.LOW)
-        GPIO.cleanup()
+        GPIO.output(BURN_EN, GPIO.LOW)
+        #GPIO.cleanup()
 
 # Debugging Area
 """

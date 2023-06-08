@@ -113,4 +113,3 @@ def read_data_string(bits):
     CS = (cs1 == bits[88]) and (cs2 == bits[89])
     data[data.size-1] = CS
     return data
-
