@@ -4,7 +4,8 @@ from PIL import Image
 
 def write_data_string(TYPE=0,PN=0,YD=0,MD=0,YBBX1=0,YBBY1=0,YBBX2=0,YBBY2=0,
                       MBBX1=0,MBBY1=0,MBBX2=0,MBBY2=0,CY=0,CM=0,PIC=np.array([[0]]),
-                      XN=0,WXA=0,WXB=0,WXC=0,WYA=0,WYB=0,WYC=0,WZA=0,WZB=0,WZC=0,CD=0,TEMP=0):
+                      XN=0,WXA=0,WXB=0,WXC=0,WYA=0,WYB=0,WYC=0,WZA=0,WZB=0,WZC=0,
+                      TA=[0.0,0.0,0.0],TB=[0.0,0.0,0.0],TC=[0.0,0.0,0.0],CD=0,TEMP=0):
     """
     Return: bit string (np array of type ints) of the data (LSB first)
     Given:
@@ -33,7 +34,10 @@ def write_data_string(TYPE=0,PN=0,YD=0,MD=0,YBBX1=0,YBBY1=0,YBBX2=0,YBBY2=0,
     WZA: rotation rate, z axis, before experiment, deg/s
     WZB: rotation rate, z axis, during experiment, deg/s
     WZC: rotation rate, z axis, after  experiment, deg/s
-    CD: current draw of the HDD, in mA
+    TA: magnetic reading, XYZ, before experiment, uT
+    TB: magnetic reading, XYZ, during experiment, uT
+    TC: magnetic reading, XYZ, after  experiment, uT
+    CD: current draw of the HDD at end of experiment, mA
     TEMP: temperature reported by the flight computer, *C
 
     """
@@ -123,11 +127,12 @@ def write_data_string(TYPE=0,PN=0,YD=0,MD=0,YBBX1=0,YBBY1=0,YBBX2=0,YBBY2=0,
         #print("CM bits: ",bits[49], " ", bits[48], " ", bits[47], " ", bits[46], " ",bits[45]) #delete
         #PIC_G = np.reshape(PIC_G, (m*n,1))
         PIC_G = np.sort(PIC_G, axis=None) #axis "none" should remove need to reshape
+        print("Q30: " ,PIC_G[round(0.3 * m*n)], " Q50: ",PIC_G[round(0.5 * m*n)], " Q70: ",PIC_G[round(0.7 * m*n)], " Q90: ", PIC_G[round(0.9 * m*n)])
         Q30 = math.floor(PIC_G[round(0.3 * m*n)]/16)
         Q50 = math.floor(PIC_G[round(0.5 * m*n)]/16)
         Q70 = math.floor(PIC_G[round(0.7 * m*n)]/16)
         Q90 = math.floor(PIC_G[round(0.9 * m*n)]/16)
-
+        
         bits[50] = (Q30 %  2)
         bits[51] = (Q30 %  4)>1.5
         bits[52] = (Q30 %  8)>3.5
@@ -143,8 +148,9 @@ def write_data_string(TYPE=0,PN=0,YD=0,MD=0,YBBX1=0,YBBY1=0,YBBX2=0,YBBY2=0,
         bits[62] = (Q90 %  2)
         bits[63] = (Q90 %  4)>1.5
         bits[64] = (Q90 %  8)>3.5
-        bits[65] = (Q90 % 16)>7.
+        bits[65] = (Q90 % 16)>7.5
         
+        print("R: ",PIX[0]," G: " ,PIX[1]," B: ",PIX[2])
         for i in range(3):
             PV = math.floor(PIX[i]/4)
             bits[66+6*i] = (PV %  2)        
@@ -168,154 +174,39 @@ def write_data_string(TYPE=0,PN=0,YD=0,MD=0,YBBX1=0,YBBY1=0,YBBX2=0,YBBY2=0,
         bits[3] = (XN %  8)> 3.5
         bits[4] = (XN % 16)> 7.5
         bits[5] = (XN % 32)>15.5
-
-        if WXA >= 25:
-            bits[ 6:14] = np.ones((8,), dtype=int)
-        elif WXA <= -25:
-            bits[ 6:14] = np.zeros((8,), dtype=int)
-        else:
-            w = math.floor(256*(WXA+25)/50)
-            bits[ 6] = (w %   2)
-            bits[ 7] = (w %   4)>  1.5
-            bits[ 8] = (w %   8)>  3.5
-            bits[ 9] = (w %  16)>  7.5
-            bits[10] = (w %  32)> 15.5
-            bits[11] = (w %  64)> 31.5
-            bits[12] = (w % 128)> 63.5
-            bits[13] = (w % 256)>127.5
         
-        if WXB >= 25:
-            bits[14:22] = np.ones((8,), dtype=int)
-        elif WXA <= -25:
-            bits[14:22] = np.zeros((8,), dtype=int)
+        if XN % 4 > 2.5:
+            #insert HDD packet with mag data
+            
+            bits[ 6:14] = val_to_bits(TA[0], 8, -100, 100)
+            bits[14:22] = val_to_bits(TB[0], 8, -100, 100)    
+            bits[22:30] = val_to_bits(TC[0], 8, -100, 100)
+            
+            bits[30:38] = val_to_bits(TA[1], 8, -100, 100)
+            bits[38:46] = val_to_bits(TB[1], 8, -100, 100)
+            bits[46:54] = val_to_bits(TC[1], 8, -100, 100)
+            
+            bits[54:62] = val_to_bits(TA[2], 8, -100, 100)
+            bits[62:70] = val_to_bits(TB[2], 8, -100, 100)
+            bits[70:78] = val_to_bits(TC[2], 8, -100, 100)
+            #CD
+            bits[78:86] = val_to_bits(CD, 8, 0, 2999)
+                
         else:
-            w = math.floor(256*(WXB+25)/50)
-            bits[14] = (w %   2)
-            bits[15] = (w %   4)>  1.5
-            bits[16] = (w %   8)>  3.5
-            bits[17] = (w %  16)>  7.5
-            bits[18] = (w %  32)> 15.5
-            bits[19] = (w %  64)> 31.5
-            bits[20] = (w % 128)> 63.5
-            bits[21] = (w % 256)>127.5
-
-        if WXC >= 25:
-            bits[22:30] = np.ones((8,), dtype=int)
-        elif WXC <= -25:
-            bits[22:30] = np.zeros((8,), dtype=int)
-        else:
-            w = math.floor(256*(WXC+25)/50)
-            bits[22] = (w %   2)
-            bits[23] = (w %   4)>  1.5
-            bits[24] = (w %   8)>  3.5
-            bits[25] = (w %  16)>  7.5
-            bits[26] = (w %  32)> 15.5
-            bits[27] = (w %  64)> 31.5
-            bits[28] = (w % 128)> 63.5
-            bits[29] = (w % 256)>127.5
-
-        if WYA >= 25:
-            bits[30:39] = np.ones((9,), dtype=int)
-             
-        elif WYA <= -25:
-            bits[30:39] = np.zeros((9,), dtype=int)
-        else:
-            w = math.floor(512*(WYA+25)/50)
-            bits[30] = (w %   2)
-            bits[31] = (w %   4)>  1.5
-            bits[32] = (w %   8)>  3.5
-            bits[33] = (w %  16)>  7.5
-            bits[34] = (w %  32)> 15.5
-            bits[35] = (w %  64)> 31.5
-            bits[36] = (w % 128)> 63.5
-            bits[37] = (w % 256)>127.5
-            bits[38] = (w % 512)>255.5
-
-        if WYB >= 25:
-            bits[39:48] = np.ones((9,), dtype=int)
-        elif WYB <= -25:
-            bits[39:48] = np.zeros((9,), dtype=int)
-        else:
-            w = math.floor(512*(WYB+25)/50)
-            bits[39] = (w %   2)
-            bits[40] = (w %   4)>  1.5
-            bits[41] = (w %   8)>  3.5
-            bits[42] = (w %  16)>  7.5
-            bits[43] = (w %  32)> 15.5
-            bits[44] = (w %  64)> 31.5
-            bits[45] = (w % 128)> 63.5
-            bits[46] = (w % 256)>127.5
-            bits[47] = (w % 512)>255.5
-
-        if WYC >= 25:
-            bits[48:57] = np.ones((9,), dtype=int)
-        elif WYC <= -25:
-            bits[48:57] = np.zeros((9,), dtype=int)
-        else:
-            w = math.floor(512*(WYC+25)/50)
-            bits[48] = (w %   2)
-            bits[49] = (w %   4)>  1.5
-            bits[50] = (w %   8)>  3.5
-            bits[51] = (w %  16)>  7.5
-            bits[52] = (w %  32)> 15.5
-            bits[53] = (w %  64)> 31.5
-            bits[54] = (w % 128)> 63.5
-            bits[55] = (w % 256)>127.5
-            bits[56] = (w % 512)>255.5
-
-        if WZA >= 25:
-            bits[57:65] = np.ones((8,), dtype=int)
-        elif WZA <= -25:
-            bits[57:65] = np.zeros((8,), dtype=int)
-        else:
-            w = math.floor(256*(WZA+25)/50)
-            bits[57] = (w %   2)
-            bits[58] = (w %   4)>  1.5
-            bits[59] = (w %   8)>  3.5
-            bits[60] = (w %  16)>  7.5
-            bits[61] = (w %  32)> 15.5
-            bits[62] = (w %  64)> 31.5
-            bits[63] = (w % 128)> 63.5
-            bits[64] = (w % 256)>127.5
-        
-        if WZB >= 25:
-            bits[65:73] = np.ones((8,), dtype=int)
-        elif WZA <= -25:
-            bits[65:73] = np.zeros((8,), dtype=int)
-        else:
-            w = math.floor(256*(WZB+25)/50)
-            bits[65] = (w %   2)
-            bits[66] = (w %   4)>  1.5
-            bits[67] = (w %   8)>  3.5
-            bits[68] = (w %  16)>  7.5
-            bits[69] = (w %  32)> 15.5
-            bits[70] = (w %  64)> 31.5
-            bits[71] = (w % 128)> 63.5
-            bits[72] = (w % 256)>127.5
-
-        if WZC >= 25:
-            bits[73:81] = np.ones((8,), dtype=int)
-        elif WZC <= -25:
-            bits[73:81] = np.zeros((8,), dtype=int)
-        else:
-            w = math.floor(256*(WZC+25)/50)
-            bits[73] = (w %   2)
-            bits[74] = (w %   4)>  1.5
-            bits[75] = (w %   8)>  3.5
-            bits[76] = (w %  16)>  7.5
-            bits[77] = (w %  32)> 15.5
-            bits[78] = (w %  64)> 31.5
-            bits[79] = (w % 128)> 63.5
-            bits[80] = (w % 256)>127.5
-
-        CD = min(2999, CD) 
-        CD = max(0, CD)
-        CD = math.floor(32*CD/3000)
-        bits[81] = (CD %  2)
-        bits[82] = (CD %  4)>  1.5
-        bits[83] = (CD %  8)>  3.5
-        bits[84] = (CD % 16)>  7.5
-        bits[85] = (CD % 32)> 15.5
+            #WX
+            bits[6:14]  = val_to_bits(WXA, 8, -25, 25)
+            bits[14:22] = val_to_bits(WXB, 8, -25, 25)    
+            bits[22:30] = val_to_bits(WXC, 8, -25, 25)
+            #WY
+            bits[30:38] = val_to_bits(WYA, 8, -25, 25)
+            bits[38:46] = val_to_bits(WYB, 8, -25, 25)
+            bits[46:54] = val_to_bits(WYC, 8, -25, 25)
+            #WZ
+            bits[54:63] = val_to_bits(WZA, 9, -25, 25)
+            bits[63:72] = val_to_bits(WZB, 9, -25, 25)
+            bits[72:81] = val_to_bits(WZC, 9, -25, 25)
+            #CD
+            bits[81:86] = val_to_bits(CD, 5, 0, 2999)
 
         TEMP = min(63, TEMP)
         TEMP = max( 0, TEMP)
@@ -323,8 +214,19 @@ def write_data_string(TYPE=0,PN=0,YD=0,MD=0,YBBX1=0,YBBY1=0,YBBX2=0,YBBY2=0,
         bits[86] = (t % 2)
         bits[87] = (t % 4)> 1.5
 
-    cs = np.sum(bits)
-    bits[88] = (cs % 2)
-    bits[89] = (cs % 4)>1.5
+        cs = np.sum(bits)
+        bits[88] = (cs % 2)
+        bits[89] = (cs % 4)>1.5
 
     return bits
+
+def val_to_bits (value, arr_size, min_val, max_val):
+    if value >= max_val:
+        print("Value too big")
+        return np.ones((arr_size,), dtype=int)
+    elif value <= min_val:
+        print("Value too small")
+        return np.zeros((arr_size,), dtype=int)
+    else:
+        value = math.floor( ((2 ** arr_size) * (value - min_val))/(max_val-min_val) )
+        return np.flipud( np.array(list(np.binary_repr(value).zfill(arr_size))).astype(np.int8) )

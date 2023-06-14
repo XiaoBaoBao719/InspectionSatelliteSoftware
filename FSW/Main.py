@@ -229,7 +229,7 @@ def writeData(results):
         num = ser.write(result_mod.encode('utf-8'))
         print(results.encode('utf-8'))
         print(num)
-        time.sleep(1)
+        time.sleep(0.1)
         print("Packet sent!")
         time.sleep(1) # Wait one second for packet to send
         ser.flush()
@@ -330,20 +330,20 @@ def doHDD(dir):
         result = HDD_cw_drive(sleep_time=HDD_SLEEP_TIME, delta=HDD_DELTA)
     sleep(5)
     HDD_stop()   # uncomment when testing!
-    flashled(5)
+    #flashled(5)
     # [w_x0, w_y0, w_z0, w_x1, w_y1, w_z1, w_xf, w_yf, w_zf, HDD_current_f] = [-1.0, -2.0, -3.0, 1.0, 2.0, 3.0, -1.0, -2.0, -3.0, 0.05]
     # result = [-1.0, -2.0, -3.0, 1.0, 2.0, 3.0, -1.0, -2.0, -3.0, 0.05]
     HDD_print(result)
     return result
 
-def reference():
-    sleep(3)
-    print("\n CASE: \"It's not possible!\"")
-    sleep(2)
-    print("\n Cooper: \"No. It's necessary\"")
-    sleep(2)
-    print("\nSuspenseful Hans Zimmer plays...\n")
-    sleep(2)
+# def reference():
+#     sleep(3)
+#     print("\n CASE: \"It's not possible!\"")
+#     sleep(2)
+#     print("\n Cooper: \"No. It's necessary\"")
+#     sleep(2)
+#     print("\nSuspenseful Hans Zimmer plays...\n")
+#     sleep(2)
 
 def setup():
     """ Performs initial bootup sequence once and deploys the payload mechanism
@@ -357,7 +357,7 @@ def setup():
     
     # INITIALIZE F/C GPIO
     initializeComputer()
-    flashled(5)
+    #flashled(5)
     
     # Initialize the payload clock
     global_timer = FSWTimer()
@@ -377,7 +377,7 @@ def setup():
     getSpacecraftState(STATE_VAR_PATH)
     
     print("\n+++++++++++++++ F/C HEALTH CHECK +++++++++++++++")
-    sleep(2)
+    sleep(0.2)
     # Assume no system errors yet
     system_error = False
     
@@ -414,34 +414,44 @@ def setup():
     
     print("Health Check Complete. \nStanding by...")
     #flashled(20)
-    sleep(2)
+    sleep(0.2)
     
-TOTAL_HDD_EXPERIMENTS = 4  # number experiments to perform
+#TOTAL_HDD_EXPERIMENTS = 4  # number experiments to perform
 TIME_PER_HDD = 1*60 # 5 mins between each experiment
 
 def HDD_Main():
     # Start HDD Experiment
     print("Initiating HDD experiment...")
     #flashled(10)
-    sleep(1)
+    sleep(0.1)
     HDD_results = []
     HDD_timer = FSWTimer()
-    tmp_timer = FSWTimer()
+    #tmp_timer = FSWTimer()
     HDD_timer.start()
-    tmp_timer.start()
+    #tmp_timer.start()
     
     curr_results = []
-    num_runs = 1
     hdd_bytes = ""
+
+    #num_runs = 1  #TODO read this from state json
+    read_out = readStateVariable(STATE_VAR_PATH, "NUMBER_HDD_RUNS", num_runs)
+    try:
+        num_runs = read_out[0] # Get the state variable for NUMBER_HDD_RUNS
+    except TypeError as e:
+        print("ISSUE WITH READING THE STATE VARIABLE: NUMBER_HDD_RUNS")
+        print(e)
+    
     
     print("\n+++++++++++++++ STARTING HDD +++++++++++++++")
-    sleep(1)
+    sleep(0.1)
     #reference()
     if permission():
         #if (HDD_timer.elapsed_time() >= TIME_PER_HDD):
         print("\nRunning HDD experiment: ", num_runs)
         print(f"Elapsed time: {HDD_timer.elapsed_time():0.4f} seconds")
-        curr_results = doHDD(1)
+        
+        curr_results = doHDD(num_runs%2 > 0.5)
+        
         HDD_results.append(curr_results)
         
         print("Run successful!")
@@ -467,8 +477,14 @@ def HDD_Main():
                                         TA=T_a,TB=T_b,TC=T_c,CD=cd, TEMP=getCPUTemp())
         hdd_data_string = bits2char(hdd_bytes)
         writeData(hdd_data_string)
-        tmp_timer = FSWTimer()
-        tmp_timer.start()
+        
+        comm_path = os.getcwd() + '/comms_sent.csv'
+        with open(comm_path, 'a', newline='') as comm_csv: # Write to csv file
+            writer = csv.writer(comm_csv)
+            writer.writerow([hdd_data_string])
+        
+        #tmp_timer = FSWTimer()
+        #tmp_timer.start()
         # Update
         num_runs += 1
         writeStateVariable(STATE_VAR_PATH, "NUMBER_HDD_RUNS", num_runs)
@@ -476,19 +492,19 @@ def HDD_Main():
     print(f"Total Elapsed HDD time: {HDD_timer.elapsed_time():0.4f} seconds")
     HDD_timer.stop()
     print("sleep HDD")
-    time.sleep(SLEEP_TIME)
-    print("arise")
+    time.sleep(1)
+    #print("arise")
     pass
 
 
 TIME_PER_HIO = 1*60 #5 minutes between experiments
-MAX_IMGS = 2
+#MAX_IMGS = 2
 INFERENCE_THRESHOLD = 0.4
 model_filename = os.getcwd()+'/handrail_output.pth'    #located in output.zip folder
 
 def HIO_Setup():
     print("Setting up HIO Experiment...")
-    sleep(2)
+    sleep(0.2)
     getSpacecraftState(STATE_VAR_PATH)
     # If deployed is FALSE, create a Burnwire() object and invoke the burn function
     # Runs .burn() for both pins
@@ -521,7 +537,7 @@ def HIO_Setup():
 def HIO_Main():
 
     print("Initiating HIO Experiment...")
-    sleep(1)
+    sleep(0.1)
     #HIO_timer = FSWTimer()
     #HIO_timer.start()
     
@@ -637,7 +653,7 @@ def HIO_Main():
     elif img_capture is None:
         print(" IMAGE NOT CAPTURED! Stopping Experiment") #Trying again...")
         #continue
-    sleep(1)
+    sleep(0.1)
     # Check S/C state again   
     getSpacecraftState(STATE_VAR_PATH)  
 
@@ -697,7 +713,7 @@ def main():
         HDD_Main()
         #writeStateVariable(STATE_VAR_PATH, "HDD_DONE", "true")
     
-    sleep(1) # Wait 10 minutes for steady-state
+    sleep(0.1) # Wait 10 minutes for steady-state
     
     #print("HIO deploy done check:", deployed)
     #print(deployed)
@@ -708,7 +724,7 @@ def main():
         writeStateVariable(STATE_VAR_PATH, "DEPLOYED", "true")
         HIO_Main()
     
-    sleep(1)
+    sleep(0.1)
     while 1:
         HDD_Main()
         HIO_Main()

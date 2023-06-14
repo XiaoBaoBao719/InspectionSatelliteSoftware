@@ -77,7 +77,7 @@ def HDD_ccw_drive(sleep_time, delta):
 def HDD_cw_drive(sleep_time, delta):
     inp = neutral_ESC_inp
     [w_x0, w_y0, w_z0, T_0] = getIMU()
-    time.sleep(5)
+    time.sleep(sleep_time)
     while inp < max_CW_ESC_inp:
         #print(inp)
         pi.set_servo_pulsewidth(ESC,inp)
