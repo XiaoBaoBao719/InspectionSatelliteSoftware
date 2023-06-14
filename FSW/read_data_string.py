@@ -7,7 +7,6 @@ def read_data_string(bits):
     Given: bit string of the data (LSB first)
     Return: data (np array of numbers)
     See definition of numbers in write_data_string.py
-    sorry I'm so rusty in python
     """
     
     m = 1080
@@ -78,31 +77,56 @@ def read_data_string(bits):
     else: #HDD data
         XN = bits[1] + 2*bits[2] + 4*bits[3] + 8*bits[4] + 16*bits[5]
 
-        WXA = -25+(50/256)*(0.5+bits[ 6]+2*bits[ 7]+4*bits[ 8]+8*bits[ 9]+16*bits[10]+32*bits[11]+64*bits[12]+128*bits[13])
-        WXB = -25+(50/256)*(0.5+bits[14]+2*bits[15]+4*bits[16]+8*bits[17]+16*bits[18]+32*bits[19]+64*bits[20]+128*bits[21])
-        WXC = -25+(50/256)*(0.5+bits[22]+2*bits[23]+4*bits[24]+8*bits[25]+16*bits[26]+32*bits[27]+64*bits[28]+128*bits[29])
-        WYA = -25+(50/512)*(0.5+bits[30]+2*bits[31]+4*bits[32]+8*bits[33]+16*bits[34]+32*bits[35]+64*bits[36]+128*bits[37]+256*bits[38])
-        WYB = -25+(50/512)*(0.5+bits[39]+2*bits[40]+4*bits[41]+8*bits[42]+16*bits[43]+32*bits[44]+64*bits[45]+128*bits[46]+256*bits[47])
-        WYC = -25+(50/512)*(0.5+bits[48]+2*bits[49]+4*bits[50]+8*bits[51]+16*bits[52]+32*bits[53]+64*bits[54]+128*bits[55]+256*bits[56])
-        WZA = -25+(50/256)*(0.5+bits[57]+2*bits[58]+4*bits[59]+8*bits[60]+16*bits[61]+32*bits[62]+64*bits[63]+128*bits[64])
-        WZB = -25+(50/256)*(0.5+bits[65]+2*bits[66]+4*bits[67]+8*bits[68]+16*bits[69]+32*bits[70]+64*bits[71]+128*bits[72])
-        WZC = -25+(50/256)*(0.5+bits[73]+2*bits[74]+4*bits[75]+8*bits[76]+16*bits[77]+32*bits[78]+64*bits[79]+128*bits[80])
-
-        CD = (3000 / 32) * (0.5 + bits[81] + 2*bits[82] + 4*bits[83] + 8*bits[84] + 16*bits[85])
+        if XN % 4 > 2.5:
+            #use mag data
+            TXA = -100+(200/256)*(0.5+bits[ 6]+2*bits[ 7]+4*bits[ 8]+8*bits[ 9]+16*bits[10]+32*bits[11]+64*bits[12]+128*bits[13])
+            TXB = -100+(200/256)*(0.5+bits[14]+2*bits[15]+4*bits[16]+8*bits[17]+16*bits[18]+32*bits[19]+64*bits[20]+128*bits[21])
+            TXC = -100+(200/256)*(0.5+bits[22]+2*bits[23]+4*bits[24]+8*bits[25]+16*bits[26]+32*bits[27]+64*bits[28]+128*bits[29])
+            TYA = -100+(200/256)*(0.5+bits[30]+2*bits[31]+4*bits[32]+8*bits[33]+16*bits[34]+32*bits[35]+64*bits[36]+128*bits[37])
+            TYB = -100+(200/256)*(0.5+bits[38]+2*bits[39]+4*bits[40]+8*bits[41]+16*bits[42]+32*bits[43]+64*bits[44]+128*bits[45])
+            TYC = -100+(200/256)*(0.5+bits[46]+2*bits[47]+4*bits[48]+8*bits[49]+16*bits[50]+32*bits[51]+64*bits[52]+128*bits[53])
+            TZA = -100+(200/256)*(0.5+bits[54]+2*bits[55]+4*bits[56]+8*bits[57]+16*bits[58]+32*bits[59]+64*bits[60]+128*bits[61])
+            TZB = -100+(200/256)*(0.5+bits[62]+2*bits[63]+4*bits[64]+8*bits[65]+16*bits[66]+32*bits[67]+64*bits[68]+128*bits[69])
+            TZC = -100+(200/256)*(0.5+bits[70]+2*bits[71]+4*bits[72]+8*bits[73]+16*bits[74]+32*bits[75]+64*bits[76]+128*bits[77])
+            CD =       (800/256)*(0.5+bits[78]+2*bits[79]+4*bits[80]+8*bits[81]+16*bits[82]+32*bits[83]+64*bits[84]+128*bits[85])
+        else:
+            #use IMU data
+            WXA = -25+(50/256)*(0.5+bits[ 6]+2*bits[ 7]+4*bits[ 8]+8*bits[ 9]+16*bits[10]+32*bits[11]+64*bits[12]+128*bits[13])
+            WXB = -25+(50/256)*(0.5+bits[14]+2*bits[15]+4*bits[16]+8*bits[17]+16*bits[18]+32*bits[19]+64*bits[20]+128*bits[21])
+            WXC = -25+(50/256)*(0.5+bits[22]+2*bits[23]+4*bits[24]+8*bits[25]+16*bits[26]+32*bits[27]+64*bits[28]+128*bits[29])
+            WYA = -25+(50/256)*(0.5+bits[30]+2*bits[31]+4*bits[32]+8*bits[33]+16*bits[34]+32*bits[35]+64*bits[36]+128*bits[37])
+            WYB = -25+(50/256)*(0.5+bits[38]+2*bits[39]+4*bits[40]+8*bits[41]+16*bits[42]+32*bits[43]+64*bits[44]+128*bits[45])
+            WYC = -25+(50/256)*(0.5+bits[46]+2*bits[47]+4*bits[48]+8*bits[49]+16*bits[50]+32*bits[51]+64*bits[52]+128*bits[53])
+            WZA = -25+(50/512)*(0.5+bits[54]+2*bits[55]+4*bits[56]+8*bits[57]+16*bits[58]+32*bits[59]+64*bits[60]+128*bits[61]+256*bits[62])
+            WZB = -25+(50/512)*(0.5+bits[63]+2*bits[64]+4*bits[65]+8*bits[66]+16*bits[67]+32*bits[68]+64*bits[69]+128*bits[70]+256*bits[71])
+            WZC = -25+(50/512)*(0.5+bits[72]+2*bits[73]+4*bits[74]+8*bits[75]+16*bits[76]+32*bits[77]+64*bits[78]+128*bits[79]+256*bits[80])
+            CD =     (800/ 32)*(0.5+bits[81]+2*bits[82]+4*bits[83]+8*bits[84]+16*bits[85])
+        
         TEMP = (64 /  4) * (0.5 + bits[86] + 2*bits[87])
 
         data = np.zeros((14,), dtype=float)
         data[ 0] = TYPE
         data[ 1] = XN
-        data[ 2] = WXA
-        data[ 3] = WXB
-        data[ 4] = WXC
-        data[ 5] = WYA
-        data[ 6] = WYB
-        data[ 7] = WYC
-        data[ 8] = WZA
-        data[ 9] = WZB
-        data[10] = WZC
+        if XN % 4 > 2.5:
+            data[ 2] = TXA
+            data[ 3] = TXB
+            data[ 4] = TXC
+            data[ 5] = TYA
+            data[ 6] = TYB
+            data[ 7] = TYC
+            data[ 8] = TZA
+            data[ 9] = TZB
+            data[10] = TZC
+        else:
+            data[ 2] = WXA
+            data[ 3] = WXB
+            data[ 4] = WXC
+            data[ 5] = WYA
+            data[ 6] = WYB
+            data[ 7] = WYC
+            data[ 8] = WZA
+            data[ 9] = WZB
+            data[10] = WZC
         data[11] = CD
         data[12] = TEMP
 

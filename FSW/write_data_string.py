@@ -39,7 +39,6 @@ def write_data_string(TYPE=0,PN=0,YD=0,MD=0,YBBX1=0,YBBY1=0,YBBX2=0,YBBY2=0,
     TC: magnetic reading, XYZ, after  experiment, uT
     CD: current draw of the HDD at end of experiment, mA
     TEMP: temperature reported by the flight computer, *C
-
     """
     
     #generate bit string
@@ -48,8 +47,7 @@ def write_data_string(TYPE=0,PN=0,YD=0,MD=0,YBBX1=0,YBBY1=0,YBBX2=0,YBBY2=0,
     bits[0] = TYPE
 
     # switch depending on whether HIO or HDD data
-    #first, HIO data:
-    if TYPE:
+    if TYPE:  #HIO data
         m, n, d = PIC.shape
         #PIC_G = PIC.convert('L')
         PIC_G = PIC[:,:,0] * PIC[:,:,0] + PIC[:,:,1] * PIC[:,:,1] + PIC[:,:,2] * PIC[:,:,2]
@@ -190,7 +188,7 @@ def write_data_string(TYPE=0,PN=0,YD=0,MD=0,YBBX1=0,YBBY1=0,YBBX2=0,YBBY2=0,
             bits[62:70] = val_to_bits(TB[2], 8, -100, 100)
             bits[70:78] = val_to_bits(TC[2], 8, -100, 100)
             #CD
-            bits[78:86] = val_to_bits(CD, 8, 0, 2999)
+            bits[78:86] = val_to_bits(CD, 8, 0, 800)
                 
         else:
             #WX
@@ -206,7 +204,7 @@ def write_data_string(TYPE=0,PN=0,YD=0,MD=0,YBBX1=0,YBBY1=0,YBBX2=0,YBBY2=0,
             bits[63:72] = val_to_bits(WZB, 9, -25, 25)
             bits[72:81] = val_to_bits(WZC, 9, -25, 25)
             #CD
-            bits[81:86] = val_to_bits(CD, 5, 0, 2999)
+            bits[81:86] = val_to_bits(CD, 5, 0, 800)
 
         TEMP = min(63, TEMP)
         TEMP = max( 0, TEMP)
