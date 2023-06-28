@@ -87,7 +87,8 @@ TIMEOUT = 10000
 WIDTH = 800 # px
 HEIGHT = 600 # px
 
-piCamera = None
+#global PiCamera
+PiCamera = None
 burnwire = None
 
 # =====================================
@@ -364,14 +365,11 @@ def setup():
     global_timer.start()
 
     # INITIALIZE PAYLOAD CAMERA 
-    """
-    if PiCamera is None:
-        try:
-            PiCamera = Camera(exp=EXPOSURE_TIME, timeout=TIMEOUT, gain=GAIN, 
-                                delay=DELAY, height=HEIGHT, width=WIDTH)
-        except RuntimeError:
-            print("Could not create PiCamera object!")
-    """
+#     if PiCamera is None:
+#         try:
+#             PiCamera = Camera(exp=EXPOSURE_TIME, timeout=TIMEOUT, gain=GAIN, delay=DELAY, height=HEIGHT, width=WIDTH)
+#         except RuntimeError:
+#             print("Could not create PiCamera object!")
     
     # Debugging statement
     getSpacecraftState(STATE_VAR_PATH)
@@ -434,7 +432,7 @@ def HDD_Main():
     hdd_bytes = ""
 
     #num_runs = 1  #TODO read this from state json
-    read_out = readStateVariable(STATE_VAR_PATH, "NUMBER_HDD_RUNS", num_runs)
+    read_out = readStateVariable(STATE_VAR_PATH, "NUMBER_HDD_RUNS")
     try:
         num_runs = read_out[0] # Get the state variable for NUMBER_HDD_RUNS
     except TypeError as e:
@@ -455,6 +453,7 @@ def HDD_Main():
         HDD_results.append(curr_results)
         
         print("Run successful!")
+        print(f"Elapsed time: {HDD_timer.elapsed_time():0.4f} seconds")
         # sleep(TIME_PER_HDD) # Wait for system to settle after 5 mins
         wxa = curr_results[0]
         wxb = curr_results[3]
@@ -551,18 +550,8 @@ def HIO_Main():
         num_imgs = 1
 
     print("\n+++++++++++++++ THE EYE OF HIO OPENS ITS BALEFUL GAZE +++++++++++++++")
-        # if the elapsed time on the timer thread is a multiple of the timer interval 
-        # threshold, perform data aquisition
-    #if (HIO_timer.elapsed_time() >= TIME_PER_HIO):
-        # Take a picture
-        # img_capture = picam.takePicture("test{num}_gain_{gain}.jpg".format(num = picam.getNumPicsTake(), 
-        #                                                     gain = picam.getGainVal()))
         
-        #camera_run(num_imgs)  #take picture and save to cwd
-        #img_capture = os.getcwd() + '/img_' + str(num_imgs) + '.jpg'
-        
-        # Test dummy data
-    print("Using sample image - NOT LIVE PHOTO")
+    print("Using image - LIVE PHOTO")
     os.system("libcamera-jpeg -o sample.jpg --nopreview --rotation 180 -t10")
     img_capture = os.getcwd() + '/sample.jpg'
     
@@ -728,6 +717,7 @@ def main():
     while 1:
         HDD_Main()
         HIO_Main()
+        sleep(20)  #pause between experiments: desired time minus 70 seconds 
     
     # Print final S/C State Variables
     getSpacecraftState(STATE_VAR_PATH)
