@@ -148,9 +148,9 @@ def write_data_string(TYPE=0,PN=0,YD=0,MD=0,YBBX1=0,YBBY1=0,YBBX2=0,YBBY2=0,
         bits[64] = (Q90 %  8)>3.5
         bits[65] = (Q90 % 16)>7.5
         
-        print("R: ",PIX[0]," G: " ,PIX[1]," B: ",PIX[2])
+        print("R: ",PIX[2]," G: " ,PIX[1]," B: ",PIX[0])
         for i in range(3):
-            PV = math.floor(PIX[i]/4)
+            PV = math.floor(PIX[2-i]/4)
             bits[66+6*i] = (PV %  2)        
             bits[67+6*i] = (PV %  4)> 1.5
             bits[68+6*i] = (PV %  8)> 3.5
@@ -173,7 +173,7 @@ def write_data_string(TYPE=0,PN=0,YD=0,MD=0,YBBX1=0,YBBY1=0,YBBX2=0,YBBY2=0,
         bits[4] = (XN % 16)> 7.5
         bits[5] = (XN % 32)>15.5
         
-        if XN % 4 > 2.5:
+        if XN % 4 > 1.5:
             #insert HDD packet with mag data
             
             bits[ 6:14] = val_to_bits(TA[0], 8, -100, 100)
