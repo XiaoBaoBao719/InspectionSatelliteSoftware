@@ -38,96 +38,129 @@ ser = serial.Serial(
 )
 
 # Setup GPIO Pin
-gpio_UCD_activate1 = mraa.Gpio(11)  #enable on GPIO 17
-gpio_UCD_activate1.dir(mraa.DIR_OUT)
-gpio_UCD_activate1.write(0)
+#gpio_UCD_activate1 = mraa.Gpio(11)  #enable on GPIO 17
+#gpio_UCD_activate1 = mraa.Gpio(17)  #enable on GPIO 17
+#gpio_UCD_activate1.dir(mraa.DIR_OUT)
+#gpio_UCD_activate1.write(0)
 
-gpio_UCD_activate2 = mraa.Gpio(13)  #start flag on GPIO 27
-gpio_UCD_activate2.dir(mraa.DIR_OUT)
-gpio_UCD_activate2.write(0)
+#gpio_UCD_activate2 = mraa.Gpio(13)  #start flag on GPIO 27
+#gpio_UCD_activate2.dir(mraa.DIR_OUT)
+#gpio_UCD_activate2.write(0)
 
 #Send activation signal
 print("Sending enable signal in 3 seconds")
-time.sleep(3)
-gpio_UCD_activate1.write(1)
+time.sleep(1)
+#gpio_UCD_activate1.write(1)
 print('GPIO 17 HIGH')
 
 print("Sending start signal in 3 seconds")
-time.sleep(3)
-gpio_UCD_activate2.write(1)
+time.sleep(1)
+#gpio_UCD_activate2.write(1)
 print('GPIO 27 HIGH')
 
 time.sleep(0.5)
 print('Listening on UART Line')
 #listen to Py
+counter = 0
 while 1:
+	#test RESET fxn
+	#phrase = "RESET"
+	#counter = counter + 1
+	#if counter%40 == 4:
+	#	try:
+	#		print("Sending reset now")
+	#		if not ser.is_open:
+	#			ser.open()
+	#		#check_valid = ser.write(phrase.encode('utf-8'))
+	#		print(phrase)
+	#		time.sleep(1)
+	#		ser.flush()
+	#		#ser.reset_input_buffer()
+	#		#ser.close()
+	#	except:
+	#		print("Reset write failed")
+	#		if not ser.is_open:
+	#			ser.open()
+	#		ser.reset_input_buffer()
+	#		ser.reset_output_buffer()
+	#		#ser.close()
+	
 	#str = ser.read_until(')',17)
-	str_inp = ser.readline().strip().decode('UTF-8')
-	if str_inp:
-		print(str_inp)
-		str_inp = check_input(str_inp)
-		print(str_inp)
-		if str_inp == "":
-			continue;
-		print(char2bits(str_inp)) # remove
-		data = read_data_string(char2bits(str_inp))
+	try:
+		if not ser.is_open:
+			ser.open()
+		str_inp = ser.readline().strip().decode('utf-8')
+		time.sleep(1)
+		#ser.close()
+		if str_inp:
+			print(str_inp)
+			str_inp = check_input(str_inp)
+			print(str_inp)
+			if str_inp == "":
+				continue;
+			print(char2bits(str_inp)) # remove
+			data = read_data_string(char2bits(str_inp))
 		
-		# display incoming data
-		rx_ucd_data(str_inp)
-		if data[0]:
-			print("Packet type: HIO")
-			print("Photo number: "+str(data[1]))
-			print("YOLO detected? "+str(data[2]))
-			print("MASK detected? "+str(data[3]))
-			print("YBB X1: "+str(data[4]))
-			print("YBB Y1: "+str(data[5]))
-			print("YBB X2: "+str(data[6]))
-			print("YBB Y2: "+str(data[7]))
-			print("MBB X1: "+str(data[8]))
-			print("MBB Y1: "+str(data[9]))
-			print("MBB X2: "+str(data[10]))
-			print("MBB Y2: "+str(data[11]))
-			print("YOLO confidence: "+str(data[12]))
-			print("MASK confidence: "+str(data[13]))
-			print("Q30: "+str(data[14]))
-			print("Q50: "+str(data[15]))
-			print("Q70: "+str(data[16]))
-			print("Q90: "+str(data[17]))
-			print("Red: "+str(data[18]))
-			print("Green: "+str(data[19]))
-			print("Blue: "+str(data[20]))
-			print("Temperature: "+str(data[21]))
-		else:
-			if data[1] %2 == 0:
-				print("Packet type: HDD mag")
-				print("Exp #: "+str(data[1]))
-				print("BXA: "+str(data[2]))
-				print("BXB: "+str(data[3]))
-				print("BXC: "+str(data[4]))
-				print("BYA: "+str(data[5]))
-				print("BYB: "+str(data[6]))
-				print("BYC: "+str(data[7]))
-				print("BZA: "+str(data[8]))
-				print("BZB: "+str(data[9]))
-				print("BZC: "+str(data[10]))
-				print("CD: "+str(data[11]))
-				print("Temp: "+str(data[12]))
+			# display incoming data
+			rx_ucd_data(str_inp)
+			if data[0]:
+				print("Packet type: HIO")
+				print("Photo number: "+str(data[1]))
+				print("YOLO detected? "+str(data[2]))
+				print("MASK detected? "+str(data[3]))
+				print("YBB X1: "+str(data[4]))
+				print("YBB Y1: "+str(data[5]))
+				print("YBB X2: "+str(data[6]))
+				print("YBB Y2: "+str(data[7]))
+				print("MBB X1: "+str(data[8]))
+				print("MBB Y1: "+str(data[9]))
+				print("MBB X2: "+str(data[10]))
+				print("MBB Y2: "+str(data[11]))
+				print("YOLO confidence: "+str(data[12]))
+				print("MASK confidence: "+str(data[13]))
+				print("Q30: "+str(data[14]))
+				print("Q50: "+str(data[15]))
+				print("Q70: "+str(data[16]))
+				print("Q90: "+str(data[17]))
+				print("Red: "+str(data[18]))
+				print("Green: "+str(data[19]))
+				print("Blue: "+str(data[20]))
+				print("Temperature: "+str(data[21]))
 			else:
-				print("Packet type: HDD acc")
-				print("Exp #: "+str(data[1]))
-				print("WXA: "+str(data[2]))
-				print("WXB: "+str(data[3]))
-				print("WXC: "+str(data[4]))
-				print("WYA: "+str(data[5]))
-				print("WYB: "+str(data[6]))
-				print("WYC: "+str(data[7]))
-				print("WZA: "+str(data[8]))
-				print("WZB: "+str(data[9]))
-				print("WZC: "+str(data[10]))
-				print("CD: "+str(data[11]))
-				print("Temp: "+str(data[12]))
-
+				if data[1] % 4  > 1.5:
+					print("Packet type: HDD mag")
+					print("Exp #: "+str(data[1]))
+					print("BXA: "+str(data[2]))
+					print("BXB: "+str(data[3]))
+					print("BXC: "+str(data[4]))
+					print("BYA: "+str(data[5]))
+					print("BYB: "+str(data[6]))
+					print("BYC: "+str(data[7]))
+					print("BZA: "+str(data[8]))
+					print("BZB: "+str(data[9]))
+					print("BZC: "+str(data[10]))
+					print("CD: "+str(data[11]))
+					print("Temp: "+str(data[12]))
+				else:
+					print("Packet type: HDD acc")
+					print("Exp #: "+str(data[1]))
+					print("WXA: "+str(data[2]))
+					print("WXB: "+str(data[3]))
+					print("WXC: "+str(data[4]))
+					print("WYA: "+str(data[5]))
+					print("WYB: "+str(data[6]))
+					print("WYC: "+str(data[7]))
+					print("WZA: "+str(data[8]))
+					print("WZB: "+str(data[9]))
+					print("WZC: "+str(data[10]))
+					print("CD: "+str(data[11]))
+					print("Temp: "+str(data[12]))
+	except:
+		print("read error")
+		if not ser.is_open:
+			ser.open()
+		ser.reset_input_buffer()
+		ser.reset_output_buffer()
+		#ser.close()
     
 #RSA
-
-

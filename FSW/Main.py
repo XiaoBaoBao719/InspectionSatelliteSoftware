@@ -58,6 +58,7 @@ from char2bits import char2bits
 from bits2char import bits2char
 from read_data_string import read_data_string
 from write_data_string import write_data_string
+import Initializer
 
 #from FinalCam import run_camera
 
@@ -65,7 +66,8 @@ from write_data_string import write_data_string
 # ==         DEPLOYMENT VARS         ==
 # =====================================
 NUM_BURNWIRES = 2
-ACCESSORY_PWR = 26
+ACCESSORY_PWR = 26  #GPIO 26, pin 37
+RESET_PIN = 6 # GPIO 6, pin 31
 
 # =====================================
 # ==       COMMS GLOBAL VARS         ==
@@ -76,6 +78,15 @@ mini_UART = '/dev/serial0'
 PL011 = '/dev/ttyAMA0'
 serial_zero = '/dev/serial0'
 SERIAL_PORT = serial_zero
+
+ser = serial.Serial()
+ser.port=SERIAL_PORT
+ser.baudrate=BAUDRATE
+ser.parity=serial.PARITY_NONE
+ser.timeout=SYS_TIMEOUT
+ser.stopbits=serial.STOPBITS_ONE
+ser.bytesize=serial.EIGHTBITS
+#ser.open()
 
 # =====================================
 # ==           CV VARS               ==
@@ -120,7 +131,7 @@ global global_timer
 HDD = 0 # Used for writing bitstream to JSC
 HIO = 1 # Used for writing bitstream to JSC
 
-LED = 21 # GPIO21, not used
+LED = 21 # GPIO21, Pin 40, not used
 
 def flashled(num):
     for i in range(num):
@@ -148,7 +159,7 @@ def initializeComputer():
     GPIO.setwarnings(False)
     GPIO.setup(LED,GPIO.OUT)
     GPIO.setup(ACCESSORY_PWR, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-    
+    GPIO.setup(RESET_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
 def getCPUTemp():
     """ Checks the SoC temperature in the core processor
@@ -210,19 +221,22 @@ def writeData(results):
     True if the data packet was sent without any issues
     False if otherwise
     """
-    ser = serial.Serial()
+    
+    # moved this to header
+    #ser = serial.Serial()
     #with serial.Serial() as ser: # Commented out for CM4, as it causes problems with the CM4
-    ser.port=SERIAL_PORT
-    ser.baudrate=BAUDRATE
-    ser.parity=serial.PARITY_NONE
-    ser.timeout=SYS_TIMEOUT
-    ser.stopbits=serial.STOPBITS_ONE
-    ser.bytesize=serial.EIGHTBITS
+    #ser.port=SERIAL_PORT
+    #ser.baudrate=BAUDRATE
+    #ser.parity=serial.PARITY_NONE
+    #ser.timeout=SYS_TIMEOUT
+    #ser.stopbits=serial.STOPBITS_ONE
+    #ser.bytesize=serial.EIGHTBITS
     
     result_mod = "(" + results + ")"
     try:
         print("Writing results...")
-        ser.open()
+        if not ser.is_open:
+            ser.open()
         #time.sleep(1)
         #temp = results.encode('utf-8')
         #print(temp)
@@ -234,7 +248,8 @@ def writeData(results):
         print("Packet sent!")
         time.sleep(1) # Wait one second for packet to send
         ser.flush()
-        ser.close()
+        #ser.reset_input_buffer()
+        #ser.close()
         return True  
     except (serial.SerialTimeoutException):
         # Reset the buffer and reset the serial conection
@@ -652,6 +667,31 @@ def permission():
         print("Waiting for permission to run")
     return 1
 
+def check_for_reset():
+    #if not ser.is_open:
+    #    ser.open()
+    #s = ser.read(5)
+    #ser.close()
+    #if s:
+    #    print(s)
+    #else:
+    #    print("no reset cmd")
+    #if len(s) == 5 and len(s) > 0:
+    #    if s[0] == 82 and s[1] == 69 and s[2] == 83 and s[3] == 69 and s[4] == 84:
+            # this will run the initializer script then shutdown the flight computer
+    if GPIO.input(RESET_PIN) == 1:
+        print("Running initializer script now")
+        Initializer.main()
+        reset_bytes = write_data_string(TYPE=HDD,XN=0,WXA=0,WXB=0,WXC=0,WYA=0,WYB=0,WYC=0,WZA=0,WZB=0,WZC=0,TA=0,TB=0,TC=0,CD=0,TEMP=0)
+        reset_data_string = bits2char(reset_bytes)
+        writeData(reset_data_string)
+        print("Shutting down in 10 seconds")
+        sleep(10)
+        os.system('sudo shutdown -h now')
+        sys.exit(0)
+    else:
+        print("no reset cmd")
+
 def main():
     # Check State Variables
     
@@ -715,6 +755,7 @@ def main():
     
     sleep(0.1)
     while 1:
+        check_for_reset()
         HDD_Main()
         HIO_Main()
         sleep(20)  #pause between experiments: desired time minus 70 seconds 

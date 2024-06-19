@@ -77,7 +77,7 @@ def read_data_string(bits):
     else: #HDD data
         XN = bits[1] + 2*bits[2] + 4*bits[3] + 8*bits[4] + 16*bits[5]
 
-        if XN % 4 > 2.5:
+        if XN % 4 > 1.5:
             #use mag data
             TXA = -100+(200/256)*(0.5+bits[ 6]+2*bits[ 7]+4*bits[ 8]+8*bits[ 9]+16*bits[10]+32*bits[11]+64*bits[12]+128*bits[13])
             TXB = -100+(200/256)*(0.5+bits[14]+2*bits[15]+4*bits[16]+8*bits[17]+16*bits[18]+32*bits[19]+64*bits[20]+128*bits[21])
